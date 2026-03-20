@@ -2,11 +2,16 @@
   "name": "partyforfriendly",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "bot"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "bot:dev": "npm run dev --workspace=bot",
+    "bot:build": "npm run build --workspace=bot"
   },
   "dependencies": {
     "next": "^15.2.2",
