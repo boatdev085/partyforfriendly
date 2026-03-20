@@ -14,9 +14,14 @@ export interface Database {
           id: string
           discord_id: string
           username: string
+          discriminator: string | null
           display_name: string | null
           avatar_url: string | null
           email: string | null
+          is_premium: boolean
+          premium_expires_at: string | null
+          stripe_customer_id: string | null
+          locale: string
           created_at: string
           updated_at: string
         }
@@ -24,9 +29,14 @@ export interface Database {
           id?: string
           discord_id: string
           username: string
+          discriminator?: string | null
           display_name?: string | null
           avatar_url?: string | null
           email?: string | null
+          is_premium?: boolean
+          premium_expires_at?: string | null
+          stripe_customer_id?: string | null
+          locale?: string
           created_at?: string
           updated_at?: string
         }
@@ -34,9 +44,14 @@ export interface Database {
           id?: string
           discord_id?: string
           username?: string
+          discriminator?: string | null
           display_name?: string | null
           avatar_url?: string | null
           email?: string | null
+          is_premium?: boolean
+          premium_expires_at?: string | null
+          stripe_customer_id?: string | null
+          locale?: string
           created_at?: string
           updated_at?: string
         }
@@ -47,6 +62,7 @@ export interface Database {
           name: string
           slug: string
           cover_url: string | null
+          genre: string[] | null
           created_at: string
         }
         Insert: {
@@ -54,6 +70,7 @@ export interface Database {
           name: string
           slug: string
           cover_url?: string | null
+          genre?: string[] | null
           created_at?: string
         }
         Update: {
@@ -61,156 +78,137 @@ export interface Database {
           name?: string
           slug?: string
           cover_url?: string | null
+          genre?: string[] | null
           created_at?: string
         }
       }
       parties: {
         Row: {
           id: string
-          host_id: string | null
+          host_id: string
           game_id: string | null
           title: string
           description: string | null
-          join_mode: 'open' | 'approval' | 'invite'
           max_members: number
-          status: 'waiting' | 'playing' | 'closed'
-          discord_voice_link: string | null
-          tags: string[]
-          scheduled_at: string | null
+          current_members: number
+          status: 'open' | 'full' | 'closed' | 'in_progress'
+          required_rank: string | null
+          language: 'th' | 'en' | 'both'
+          discord_channel_id: string | null
+          discord_voice_channel_id: string | null
+          is_private: boolean
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
-          host_id?: string | null
+          host_id: string
           game_id?: string | null
           title: string
           description?: string | null
-          join_mode?: 'open' | 'approval' | 'invite'
           max_members?: number
-          status?: 'waiting' | 'playing' | 'closed'
-          discord_voice_link?: string | null
-          tags?: string[]
-          scheduled_at?: string | null
+          current_members?: number
+          status?: 'open' | 'full' | 'closed' | 'in_progress'
+          required_rank?: string | null
+          language?: 'th' | 'en' | 'both'
+          discord_channel_id?: string | null
+          discord_voice_channel_id?: string | null
+          is_private?: boolean
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
-          host_id?: string | null
+          host_id?: string
           game_id?: string | null
           title?: string
           description?: string | null
-          join_mode?: 'open' | 'approval' | 'invite'
           max_members?: number
-          status?: 'waiting' | 'playing' | 'closed'
-          discord_voice_link?: string | null
-          tags?: string[]
-          scheduled_at?: string | null
+          current_members?: number
+          status?: 'open' | 'full' | 'closed' | 'in_progress'
+          required_rank?: string | null
+          language?: 'th' | 'en' | 'both'
+          discord_channel_id?: string | null
+          discord_voice_channel_id?: string | null
+          is_private?: boolean
           created_at?: string
           updated_at?: string
         }
       }
-      party_members: {
+      memberships: {
         Row: {
           id: string
-          party_id: string | null
-          user_id: string | null
+          party_id: string
+          user_id: string
           role: 'host' | 'member'
-          status: 'active' | 'left' | 'kicked'
+          status: 'approved' | 'pending' | 'rejected'
           joined_at: string
         }
         Insert: {
           id?: string
-          party_id?: string | null
-          user_id?: string | null
+          party_id: string
+          user_id: string
           role?: 'host' | 'member'
-          status?: 'active' | 'left' | 'kicked'
+          status?: 'approved' | 'pending' | 'rejected'
           joined_at?: string
         }
         Update: {
           id?: string
-          party_id?: string | null
-          user_id?: string | null
+          party_id?: string
+          user_id?: string
           role?: 'host' | 'member'
-          status?: 'active' | 'left' | 'kicked'
+          status?: 'approved' | 'pending' | 'rejected'
           joined_at?: string
         }
       }
-      join_requests: {
+      waitlist: {
         Row: {
           id: string
-          party_id: string | null
-          user_id: string | null
-          status: 'pending' | 'approved' | 'rejected'
-          message: string | null
+          party_id: string
+          user_id: string
+          position: number
           created_at: string
         }
         Insert: {
           id?: string
-          party_id?: string | null
-          user_id?: string | null
-          status?: 'pending' | 'approved' | 'rejected'
-          message?: string | null
+          party_id: string
+          user_id: string
+          position: number
           created_at?: string
         }
         Update: {
           id?: string
-          party_id?: string | null
-          user_id?: string | null
-          status?: 'pending' | 'approved' | 'rejected'
-          message?: string | null
+          party_id?: string
+          user_id?: string
+          position?: number
           created_at?: string
         }
       }
-      messages: {
+      ratings: {
         Row: {
           id: string
-          party_id: string | null
-          user_id: string | null
-          content: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          party_id?: string | null
-          user_id?: string | null
-          content: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          party_id?: string | null
-          user_id?: string | null
-          content?: string
-          created_at?: string
-        }
-      }
-      reviews: {
-        Row: {
-          id: string
-          reviewer_id: string | null
-          reviewee_id: string | null
-          party_id: string | null
-          rating: number
+          rater_id: string
+          rated_id: string
+          party_id: string
+          score: number
           comment: string | null
           created_at: string
         }
         Insert: {
           id?: string
-          reviewer_id?: string | null
-          reviewee_id?: string | null
-          party_id?: string | null
-          rating: number
+          rater_id: string
+          rated_id: string
+          party_id: string
+          score: number
           comment?: string | null
           created_at?: string
         }
         Update: {
           id?: string
-          reviewer_id?: string | null
-          reviewee_id?: string | null
-          party_id?: string | null
-          rating?: number
+          rater_id?: string
+          rated_id?: string
+          party_id?: string
+          score?: number
           comment?: string | null
           created_at?: string
         }
@@ -218,27 +216,111 @@ export interface Database {
       notifications: {
         Row: {
           id: string
-          user_id: string | null
-          type: 'join_request' | 'waitlist_open' | 'rated' | 'approved' | 'party_full' | 'badge_earned'
-          payload: Json
+          user_id: string
+          type: string
+          title: string
+          message: string
+          data: Json | null
           is_read: boolean
           created_at: string
         }
         Insert: {
           id?: string
-          user_id?: string | null
-          type: 'join_request' | 'waitlist_open' | 'rated' | 'approved' | 'party_full' | 'badge_earned'
-          payload?: Json
+          user_id: string
+          type: string
+          title: string
+          message: string
+          data?: Json | null
           is_read?: boolean
           created_at?: string
         }
         Update: {
           id?: string
-          user_id?: string | null
-          type?: 'join_request' | 'waitlist_open' | 'rated' | 'approved' | 'party_full' | 'badge_earned'
-          payload?: Json
+          user_id?: string
+          type?: string
+          title?: string
+          message?: string
+          data?: Json | null
           is_read?: boolean
           created_at?: string
+        }
+      }
+      badges: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          icon_url: string | null
+          condition_type: string
+          condition_value: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          icon_url?: string | null
+          condition_type: string
+          condition_value: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          icon_url?: string | null
+          condition_type?: string
+          condition_value?: number
+          created_at?: string
+        }
+      }
+      user_badges: {
+        Row: {
+          id: string
+          user_id: string
+          badge_id: string
+          awarded_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          badge_id: string
+          awarded_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          badge_id?: string
+          awarded_at?: string
+        }
+      }
+      game_profiles: {
+        Row: {
+          id: string
+          user_id: string
+          game_id: string
+          in_game_name: string | null
+          rank: string | null
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          game_id: string
+          in_game_name?: string | null
+          rank?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          game_id?: string
+          in_game_name?: string | null
+          rank?: string | null
+          role?: string | null
+          updated_at?: string
         }
       }
     }
@@ -253,3 +335,15 @@ export interface Database {
     }
   }
 }
+
+/** Convenience type aliases */
+export type UserRow       = Database['public']['Tables']['users']['Row']
+export type UserInsert    = Database['public']['Tables']['users']['Insert']
+export type UserUpdate    = Database['public']['Tables']['users']['Update']
+export type GameRow       = Database['public']['Tables']['games']['Row']
+export type PartyRow      = Database['public']['Tables']['parties']['Row']
+export type MembershipRow = Database['public']['Tables']['memberships']['Row']
+export type RatingRow     = Database['public']['Tables']['ratings']['Row']
+export type NotificationRow = Database['public']['Tables']['notifications']['Row']
+export type BadgeRow      = Database['public']['Tables']['badges']['Row']
+export type GameProfileRow = Database['public']['Tables']['game_profiles']['Row']
