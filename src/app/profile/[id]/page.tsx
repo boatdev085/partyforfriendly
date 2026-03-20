@@ -64,6 +64,10 @@ const PageWrapper = styled.div`
   background: ${theme.colors.bg};
   font-family: ${theme.fonts.sans};
   padding: 32px 16px 48px;
+
+  @media (max-width: 768px) {
+    padding: 20px 12px 40px;
+  }
 `;
 
 const Inner = styled.div`

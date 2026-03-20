@@ -11,6 +11,10 @@ const PageWrapper = styled.div`
   background: ${theme.colors.bg};
   font-family: ${theme.fonts.sans};
   padding: 32px 16px 64px;
+
+  @media (max-width: 768px) {
+    padding: 20px 12px 48px;
+  }
 `;
 
 const Inner = styled.div`

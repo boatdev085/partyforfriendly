@@ -18,6 +18,10 @@ const Page = styled.main`
   max-width: 640px;
   margin: 0 auto;
   padding: 32px 20px 80px;
+
+  @media (max-width: 768px) {
+    padding: 20px 16px 60px;
+  }
 `;
 
 const Header = styled.div`
@@ -31,6 +35,10 @@ const Title = styled.h1`
   font-size: 22px;
   font-weight: 800;
   color: ${theme.colors.text};
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
 `;
 
 const MarkAllBtn = styled.button`

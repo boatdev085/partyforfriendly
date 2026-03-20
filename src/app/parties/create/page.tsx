@@ -65,6 +65,10 @@ const PageTitle = styled.h1`
   font-weight: 800;
   color: ${theme.colors.text};
   margin-bottom: 4px;
+
+  @media (max-width: 480px) {
+    font-size: 20px;
+  }
 `;
 
 const PageSub = styled.p`

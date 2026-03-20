@@ -98,6 +98,10 @@ const OpenBadge = styled.span`
   padding: 3px 8px;
   border-radius: ${theme.radii.sm};
   white-space: nowrap;
+
+  @media (max-width: 480px) {
+    display: none;
+  }
 `;
 
 const GameTag = styled.span`
@@ -109,6 +113,10 @@ const GameTag = styled.span`
   padding: 3px 8px;
   border-radius: ${theme.radii.sm};
   white-space: nowrap;
+
+  @media (max-width: 480px) {
+    display: none;
+  }
 `;
 
 const SlotCount = styled.span`
@@ -134,6 +142,11 @@ const LeaveBtn = styled.button`
     background: ${theme.colors.danger};
     color: #fff;
   }
+
+  @media (max-width: 480px) {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
 `;
 
 const Content = styled.div`
@@ -142,6 +155,10 @@ const Content = styled.div`
   gap: 0;
   overflow: hidden;
   height: calc(100vh - 57px);
+
+  @media (max-width: 768px) {
+    height: calc(100vh - 52px - 57px);
+  }
 `;
 
 const ChatCol = styled.div`
@@ -151,6 +168,10 @@ const ChatCol = styled.div`
   overflow: hidden;
   display: flex;
   flex-direction: column;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
 `;
 
 const Sidebar = styled.div`
