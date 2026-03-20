@@ -4,6 +4,7 @@ import { useState } from "react";
 import styled from "styled-components";
 import { theme } from "@/styles/theme";
 import NotifItem, { type Notif } from "@/components/notifications/NotifItem";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 const INITIAL_NOTIFS: Notif[] = [
   { id:"n1", type:"join_request", username:"SomchaiXX", game:"ROV", timeAgo:"2 นาทีที่แล้ว", isNew:true },
@@ -93,6 +94,7 @@ export default function NotificationsPage() {
   const newCount = newNotifs.length;
 
   return (
+    <AuthGuard>
     <Page>
       <Header>
         <Title>แจ้งเตือน</Title>
@@ -130,5 +132,6 @@ export default function NotificationsPage() {
         </Card>
       </Section>
     </Page>
+    </AuthGuard>
   );
 }

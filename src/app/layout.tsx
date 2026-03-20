@@ -3,6 +3,7 @@ import StyledComponentsRegistry from "@/lib/registry";
 import GlobalStyle from "@/styles/GlobalStyle";
 import LayoutShell from "@/components/layout/LayoutShell";
 import Footer from "@/components/layout/Footer";
+import SessionProviderWrapper from "@/components/auth/SessionProviderWrapper";
 
 export const metadata: Metadata = {
   title: "PartyForFriendly",
@@ -18,11 +19,13 @@ export default function RootLayout({
     <html lang="th">
       <body>
         <StyledComponentsRegistry>
-          <GlobalStyle />
-          <LayoutShell>
-            {children}
-            <Footer />
-          </LayoutShell>
+          <SessionProviderWrapper>
+            <GlobalStyle />
+            <LayoutShell>
+              {children}
+              <Footer />
+            </LayoutShell>
+          </SessionProviderWrapper>
         </StyledComponentsRegistry>
       </body>
     </html>

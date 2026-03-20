@@ -1,5 +1,7 @@
 "use client";
 
+import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import styled from "styled-components";
 import { theme } from "@/styles/theme";
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -7,12 +9,11 @@ import StatsRow from "@/components/profile/StatsRow";
 import GamesList, { GameEntry } from "@/components/profile/GamesList";
 import RatingOverview from "@/components/profile/RatingOverview";
 import PartyHistory, { PartyHistoryEntry } from "@/components/profile/PartyHistory";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 const MOCK_USER = {
   id: "u1",
-  username: "PlayerOne_TH",
   bio: "เล่นเกมเพื่อความสนุก ไม่ toxic 🎮",
-  isSelf: true,
 };
 
 const MOCK_GAMES: GameEntry[] = [
@@ -79,13 +80,26 @@ const Inner = styled.div`
 `;
 
 export default function ProfilePage() {
+  const params = useParams();
+  const { data: session } = useSession();
+
+  // Determine if this is the current user's own profile.
+  // "1" is the mock ID for the logged-in user until real user IDs are connected.
+  const profileId = params?.id as string;
+  const isSelf = profileId === "1";
+
+  const displayName = isSelf
+    ? (session?.user as any)?.discordUsername ?? session?.user?.name ?? "PlayerOne_TH"
+    : "PlayerOne_TH";
+
   return (
+    <AuthGuard>
     <PageWrapper>
       <Inner>
         <ProfileHeader
-          username={MOCK_USER.username}
+          username={displayName}
           bio={MOCK_USER.bio}
-          isSelf={MOCK_USER.isSelf}
+          isSelf={isSelf}
         />
         <StatsRow
           parties={127}
@@ -95,7 +109,7 @@ export default function ProfilePage() {
         />
         <GamesList
           games={MOCK_GAMES}
-          isSelf={MOCK_USER.isSelf}
+          isSelf={isSelf}
         />
         <RatingOverview
           score={4.8}
@@ -105,5 +119,6 @@ export default function ProfilePage() {
         <PartyHistory entries={MOCK_PARTY_HISTORY} />
       </Inner>
     </PageWrapper>
+    </AuthGuard>
   );
 }

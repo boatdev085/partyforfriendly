@@ -8,6 +8,7 @@ import type { Party } from "@/types";
 import { MOCK_PARTIES } from "@/lib/mock-data";
 import SearchFilters, { SearchFilterState } from "@/components/search/SearchFilters";
 import SearchResults from "@/components/search/SearchResults";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 const DEFAULT_FILTERS: SearchFilterState = {
   game: "",
@@ -166,6 +167,7 @@ export default function SearchPage() {
   };
 
   return (
+    <AuthGuard>
     <Page>
       <Container>
         <PageHeader>
@@ -197,5 +199,6 @@ export default function SearchPage() {
         </Layout>
       </Container>
     </Page>
+    </AuthGuard>
   );
 }

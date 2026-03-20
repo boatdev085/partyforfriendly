@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { theme } from "@/styles/theme";
 import toast, { Toaster } from "react-hot-toast";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -517,6 +518,7 @@ export default function CreatePartyPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
+    <AuthGuard>
     <Page>
       <Toaster position="top-center" />
       <Container>
@@ -723,5 +725,6 @@ export default function CreatePartyPage() {
         </form>
       </Container>
     </Page>
+    </AuthGuard>
   );
 }

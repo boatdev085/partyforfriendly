@@ -205,7 +205,7 @@ export default function Hero() {
           <Search size={16} />
           หาปาร์ตี้เลย
         </BtnPrimary>
-        <BtnSecondary href="/auth/signin">
+        <BtnSecondary href="/login">
           เข้าสู่ระบบด้วย Discord
           <ArrowRight size={16} />
         </BtnSecondary>

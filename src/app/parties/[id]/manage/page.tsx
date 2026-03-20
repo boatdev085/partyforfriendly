@@ -8,6 +8,7 @@ import PartySettings from "@/components/leader/PartySettings";
 import RealtimeStats from "@/components/leader/RealtimeStats";
 import MemberManager, { MemberItem } from "@/components/leader/MemberManager";
 import PendingList, { PendingItem } from "@/components/leader/PendingList";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 const MOCK_MEMBERS: MemberItem[] = [
   {
@@ -138,6 +139,7 @@ export default function LeaderPanelPage() {
   };
 
   return (
+    <AuthGuard>
     <Page>
       <Topbar>
         <OpenBadge>OPEN 3/5</OpenBadge>
@@ -168,5 +170,6 @@ export default function LeaderPanelPage() {
         <PendingList initialPending={MOCK_PENDING} />
       </Content>
     </Page>
+    </AuthGuard>
   );
 }

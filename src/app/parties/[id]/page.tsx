@@ -6,6 +6,7 @@ import { theme } from "@/styles/theme";
 import ChatArea, { ChatMessage } from "@/components/room/ChatArea";
 import MembersList, { Member } from "@/components/room/MembersList";
 import PartyInfoCard from "@/components/room/PartyInfoCard";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 const MOCK_MESSAGES: ChatMessage[] = [
   {
@@ -216,6 +217,7 @@ export default function PartyRoomPage() {
   const router = useRouter();
 
   return (
+    <AuthGuard>
     <Page>
       <Topbar>
         <PartyName>ROV แรงค์ Diamond ขึ้น</PartyName>
@@ -253,5 +255,6 @@ export default function PartyRoomPage() {
         </Sidebar>
       </Content>
     </Page>
+    </AuthGuard>
   );
 }

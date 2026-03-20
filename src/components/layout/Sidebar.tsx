@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import styled, { css } from "styled-components";
 import { theme } from "@/styles/theme";
 import { useLocale } from "@/lib/locale-context";
 import LangSwitcher from "./LangSwitcher";
+import { useSession, signOut } from "next-auth/react";
 
 interface NavItemData {
   icon: string;
@@ -226,6 +228,7 @@ const Avatar = styled.div`
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
+  overflow: hidden;
 `;
 
 const UserInfo = styled.div`
@@ -251,6 +254,23 @@ const OnlineDot = styled.span`
   display: inline-block;
 `;
 
+const LogoutButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: ${theme.colors.textDim};
+  font-size: 14px;
+  border-radius: ${theme.radii.sm};
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+
+  &:hover {
+    color: ${theme.colors.danger};
+    background: rgba(239, 68, 68, 0.1);
+  }
+`;
+
 interface SidebarProps {
   open: boolean;
   onClose: () => void;
@@ -259,6 +279,11 @@ interface SidebarProps {
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { t } = useLocale();
+  const { data: session } = useSession();
+
+  const userName = (session?.user as any)?.discordUsername || session?.user?.name || "Guest";
+  const userImage = session?.user?.image;
+  const initials = userName.slice(0, 2).toUpperCase();
 
   return (
     <>
@@ -298,11 +323,23 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             <LangSwitcher />
           </LangSwitcherRow>
           <UserFooter>
-            <Avatar>PT</Avatar>
+            <Avatar>
+              {userImage ? (
+                <Image src={userImage} alt={userName} width={34} height={34} />
+              ) : (
+                initials
+              )}
+            </Avatar>
             <UserInfo>
-              <UserName>PlayerOne_TH</UserName>
+              <UserName>{userName}</UserName>
             </UserInfo>
-            <OnlineDot />
+            {session ? (
+              <LogoutButton onClick={() => signOut({ callbackUrl: "/login" })} title="ออกจากระบบ">
+                ⏻
+              </LogoutButton>
+            ) : (
+              <OnlineDot />
+            )}
           </UserFooter>
         </SidebarFooterArea>
       </SidebarWrapper>

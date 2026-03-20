@@ -8,6 +8,7 @@ import PartyCard from "@/components/party/PartyCard";
 import FilterBar from "@/components/parties/FilterBar";
 import SponsoredBanner from "@/components/parties/SponsoredBanner";
 import { MOCK_PARTIES } from "@/lib/mock-data";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 const Page = styled.main`
   min-height: 100vh;
@@ -93,6 +94,7 @@ export default function PartiesPage() {
   ).length;
 
   return (
+    <AuthGuard>
     <Page>
       <Container>
         <PageHeader>
@@ -120,5 +122,6 @@ export default function PartiesPage() {
         </Grid>
       </Container>
     </Page>
+    </AuthGuard>
   );
 }

@@ -5,6 +5,7 @@ import { theme } from "@/styles/theme";
 import GiveRatingForm from "@/components/reviews/GiveRatingForm";
 import ReceivedReviews from "@/components/reviews/ReceivedReviews";
 import { Toaster } from "react-hot-toast";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 const PageWrapper = styled.div`
   min-height: 100vh;
@@ -27,6 +28,7 @@ const Inner = styled.div`
 
 export default function ReviewsPage() {
   return (
+    <AuthGuard>
     <PageWrapper>
       <Toaster position="top-center" />
       <Inner>
@@ -34,5 +36,6 @@ export default function ReviewsPage() {
         <ReceivedReviews />
       </Inner>
     </PageWrapper>
+    </AuthGuard>
   );
 }
