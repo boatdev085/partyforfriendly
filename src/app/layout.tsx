@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import StyledComponentsRegistry from "@/lib/registry";
 import GlobalStyle from "@/styles/GlobalStyle";
-import Navbar from "@/components/layout/Navbar";
+import LayoutShell from "@/components/layout/LayoutShell";
 import Footer from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
@@ -19,9 +19,10 @@ export default function RootLayout({
       <body>
         <StyledComponentsRegistry>
           <GlobalStyle />
-          <Navbar />
-          {children}
-          <Footer />
+          <LayoutShell>
+            {children}
+            <Footer />
+          </LayoutShell>
         </StyledComponentsRegistry>
       </body>
     </html>
