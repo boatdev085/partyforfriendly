@@ -16,6 +16,10 @@ const Section = styled.section`
   padding: 80px 24px 100px;
   text-align: center;
 
+  @media (max-width: 768px) {
+    padding: 48px 20px 60px;
+  }
+
   &::before {
     content: "";
     position: absolute;
@@ -76,6 +80,15 @@ const Buttons = styled.div`
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 64px;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
 `;
 
 const BtnPrimary = styled(Link)`
@@ -95,6 +108,10 @@ const BtnPrimary = styled(Link)`
     background: ${theme.colors.primaryHover};
     box-shadow: 0 0 30px rgba(124, 106, 255, 0.4);
     transform: translateY(-1px);
+  }
+
+  @media (max-width: 480px) {
+    justify-content: center;
   }
 `;
 
@@ -116,6 +133,10 @@ const BtnSecondary = styled(Link)`
     border-color: ${theme.colors.borderLight};
     background: ${theme.colors.bgHover};
   }
+
+  @media (max-width: 480px) {
+    justify-content: center;
+  }
 `;
 
 const Stats = styled.div`
@@ -124,6 +145,10 @@ const Stats = styled.div`
   justify-content: center;
   gap: 40px;
   flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    gap: 24px;
+  }
 `;
 
 const Stat = styled.div`
@@ -135,6 +160,10 @@ const Stat = styled.div`
     font-weight: 800;
     color: ${theme.colors.text};
     letter-spacing: -0.5px;
+
+    @media (max-width: 480px) {
+      font-size: 22px;
+    }
   }
 
   span {
@@ -147,6 +176,10 @@ const Divider = styled.div`
   width: 1px;
   height: 36px;
   background: ${theme.colors.border};
+
+  @media (max-width: 480px) {
+    display: none;
+  }
 `;
 
 export default function Hero() {

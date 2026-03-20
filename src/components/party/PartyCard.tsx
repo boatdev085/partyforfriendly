@@ -24,6 +24,10 @@ const Card = styled(Link)`
     transform: translateY(-2px);
     box-shadow: ${theme.shadows.glow};
   }
+
+  @media (max-width: 480px) {
+    padding: 16px;
+  }
 `;
 
 const Top = styled.div`
@@ -93,7 +97,8 @@ const Footer = styled.div`
 const Meta = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
 `;
 
 const MetaItem = styled.span`

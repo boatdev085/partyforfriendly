@@ -72,6 +72,10 @@ const Section = styled.section`
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px 80px;
+
+  @media (max-width: 768px) {
+    padding: 0 16px 60px;
+  }
 `;
 
 const Header = styled.div`
@@ -120,8 +124,13 @@ const ViewAll = styled(Link)`
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 16px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 `;
 
 export default function PartyPreview() {
