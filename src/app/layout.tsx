@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import StyledComponentsRegistry from "@/lib/registry";
+import GlobalStyle from "@/styles/GlobalStyle";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
   title: "PartyForFriendly",
@@ -12,9 +15,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="th">
       <body>
-        <StyledComponentsRegistry>{children}</StyledComponentsRegistry>
+        <StyledComponentsRegistry>
+          <GlobalStyle />
+          <Navbar />
+          {children}
+          <Footer />
+        </StyledComponentsRegistry>
       </body>
     </html>
   );
