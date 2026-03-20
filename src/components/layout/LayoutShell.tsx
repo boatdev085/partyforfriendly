@@ -5,6 +5,8 @@ import styled from "styled-components";
 import { theme } from "@/styles/theme";
 import Sidebar from "./Sidebar";
 import HamburgerBtn from "./HamburgerBtn";
+import LangSwitcher from "./LangSwitcher";
+import { LocaleProvider } from "@/lib/locale-context";
 
 const ShellWrapper = styled.div`
   display: flex;
@@ -33,6 +35,7 @@ const MobileTopBarTitle = styled.span`
   font-size: 15px;
   font-weight: 700;
   color: ${theme.colors.text};
+  flex: 1;
 `;
 
 const MainContent = styled.main`
@@ -50,15 +53,18 @@ export default function LayoutShell({ children }: LayoutShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <ShellWrapper>
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <MainContent>
-        <MobileTopBar>
-          <HamburgerBtn onClick={() => setSidebarOpen(true)} />
-          <MobileTopBarTitle>PartyForFriendly</MobileTopBarTitle>
-        </MobileTopBar>
-        {children}
-      </MainContent>
-    </ShellWrapper>
+    <LocaleProvider>
+      <ShellWrapper>
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <MainContent>
+          <MobileTopBar>
+            <HamburgerBtn onClick={() => setSidebarOpen(true)} />
+            <MobileTopBarTitle>PartyForFriendly</MobileTopBarTitle>
+            <LangSwitcher />
+          </MobileTopBar>
+          {children}
+        </MainContent>
+      </ShellWrapper>
+    </LocaleProvider>
   );
 }

@@ -4,10 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styled, { css } from "styled-components";
 import { theme } from "@/styles/theme";
+import { useLocale } from "@/lib/locale-context";
+import LangSwitcher from "./LangSwitcher";
 
 interface NavItemData {
   icon: string;
-  label: string;
+  labelKey: string;
   href: string;
   badge?: string;
 }
@@ -21,25 +23,25 @@ const navSections: NavSection[] = [
   {
     label: "MAIN",
     items: [
-      { icon: "🏠", label: "หน้าหลัก", href: "/" },
-      { icon: "📋", label: "Party List", href: "/parties" },
-      { icon: "🔍", label: "ค้นหา", href: "/search" },
-      { icon: "➕", label: "สร้าง Party", href: "/parties/create" },
+      { icon: "🏠", labelKey: "nav_home", href: "/" },
+      { icon: "📋", labelKey: "nav_list", href: "/parties" },
+      { icon: "🔍", labelKey: "nav_search", href: "/search" },
+      { icon: "➕", labelKey: "nav_create", href: "/parties/create" },
     ],
   },
   {
     label: "MY PARTY",
     items: [
-      { icon: "🎮", label: "ห้อง Party", href: "/parties/1" },
-      { icon: "⚙️", label: "จัดการห้อง", href: "/parties/1/manage" },
+      { icon: "🎮", labelKey: "nav_room", href: "/parties/1" },
+      { icon: "⚙️", labelKey: "nav_leader", href: "/parties/1/manage" },
     ],
   },
   {
     label: "ACCOUNT",
     items: [
-      { icon: "👤", label: "โปรไฟล์", href: "/profile/1" },
-      { icon: "⭐", label: "รีวิว", href: "/reviews" },
-      { icon: "🔔", label: "แจ้งเตือน", href: "/notifications", badge: "3" },
+      { icon: "👤", labelKey: "nav_profile", href: "/profile/1" },
+      { icon: "⭐", labelKey: "nav_rating", href: "/reviews" },
+      { icon: "🔔", labelKey: "nav_notif", href: "/notifications", badge: "3" },
     ],
   },
 ];
@@ -189,13 +191,23 @@ const Badge = styled.span`
   line-height: 1.6;
 `;
 
+const SidebarFooterArea = styled.div`
+  border-top: 1px solid ${theme.colors.border};
+  flex-shrink: 0;
+`;
+
+const LangSwitcherRow = styled.div`
+  padding: 10px 16px;
+  display: flex;
+  justify-content: center;
+  border-bottom: 1px solid ${theme.colors.border};
+`;
+
 const UserFooter = styled.div`
   padding: 14px 16px;
-  border-top: 1px solid ${theme.colors.border};
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-shrink: 0;
 `;
 
 const Avatar = styled.div`
@@ -246,6 +258,7 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const { t } = useLocale();
 
   return (
     <>
@@ -272,7 +285,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                   onClick={onClose}
                 >
                   <NavIcon>{item.icon}</NavIcon>
-                  <NavLabel>{item.label}</NavLabel>
+                  <NavLabel>{t(item.labelKey)}</NavLabel>
                   {item.badge && <Badge>{item.badge}</Badge>}
                 </NavItemLink>
               ))}
@@ -280,13 +293,18 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           ))}
         </NavContent>
 
-        <UserFooter>
-          <Avatar>PT</Avatar>
-          <UserInfo>
-            <UserName>PlayerOne_TH</UserName>
-          </UserInfo>
-          <OnlineDot />
-        </UserFooter>
+        <SidebarFooterArea>
+          <LangSwitcherRow>
+            <LangSwitcher />
+          </LangSwitcherRow>
+          <UserFooter>
+            <Avatar>PT</Avatar>
+            <UserInfo>
+              <UserName>PlayerOne_TH</UserName>
+            </UserInfo>
+            <OnlineDot />
+          </UserFooter>
+        </SidebarFooterArea>
       </SidebarWrapper>
     </>
   );
