@@ -16,6 +16,10 @@ const Section = styled.section`
   padding: 80px 24px 100px;
   text-align: center;
 
+  @media (max-width: 640px) {
+    padding: 48px 20px 64px;
+  }
+
   &::before {
     content: "";
     position: absolute;
@@ -124,6 +128,10 @@ const Stats = styled.div`
   justify-content: center;
   gap: 40px;
   flex-wrap: wrap;
+
+  @media (max-width: 640px) {
+    gap: 24px;
+  }
 `;
 
 const Stat = styled.div`
@@ -147,6 +155,10 @@ const Divider = styled.div`
   width: 1px;
   height: 36px;
   background: ${theme.colors.border};
+
+  @media (max-width: 640px) {
+    display: none;
+  }
 `;
 
 export default function Hero() {

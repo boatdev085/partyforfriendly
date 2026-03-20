@@ -45,6 +45,10 @@ const NavLinks = styled.div`
   display: flex;
   align-items: center;
   gap: 4px;
+
+  @media (max-width: 640px) {
+    display: none;
+  }
 `;
 
 const NavLink = styled(Link)`
@@ -71,9 +75,15 @@ const LoginBtn = styled(Link)`
   background: ${theme.colors.primary};
   color: #fff;
   transition: background 0.15s;
+  white-space: nowrap;
 
   &:hover {
     background: ${theme.colors.primaryHover};
+  }
+
+  @media (max-width: 640px) {
+    padding: 7px 12px;
+    font-size: 13px;
   }
 `;
 
