@@ -20,6 +20,12 @@ export interface Party {
   language: "th" | "en" | "both";
   created_at: string;
   host?: User;
+  join_mode: "auto" | "approve";
+  discord_voice_link?: string;
+  tags?: string[];
+  pending_count?: number;
+  host_name?: string;
+  game_name?: string;
 }
 
 export interface Membership {

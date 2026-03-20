@@ -7,10 +7,10 @@ import { Users, Globe, Crown } from "lucide-react";
 import type { Party } from "@/types";
 
 interface Props {
-  party: Party & { game_name?: string; host_name?: string };
+  party: Party;
 }
 
-const Card = styled(Link)`
+const Card = styled.div`
   display: block;
   background: ${theme.colors.bgCard};
   border: 1px solid ${theme.colors.border};
@@ -28,6 +28,11 @@ const Card = styled(Link)`
   @media (max-width: 480px) {
     padding: 16px;
   }
+`;
+
+const CardLink = styled(Link)`
+  display: block;
+  text-decoration: none;
 `;
 
 const Top = styled.div`
@@ -49,6 +54,13 @@ const GameTag = styled.span`
   border-radius: ${theme.radii.sm};
 `;
 
+const BadgeRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+`;
+
 const StatusBadge = styled.span<{ $status: string }>`
   font-size: 11px;
   font-weight: 600;
@@ -68,6 +80,15 @@ const StatusBadge = styled.span<{ $status: string }>`
       : theme.colors.bgHover};
 `;
 
+const PendingBadge = styled.span`
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: ${theme.radii.sm};
+  color: ${theme.colors.warning};
+  background: rgba(245, 158, 11, 0.15);
+`;
+
 const Title = styled.h3`
   font-size: 15px;
   font-weight: 600;
@@ -84,21 +105,31 @@ const Description = styled.p`
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 `;
 
-const Footer = styled.div`
+const TagRow = styled.div`
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-`;
-
-const Meta = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
+  margin-bottom: 10px;
+`;
+
+const Tag = styled.span`
+  font-size: 11px;
+  color: ${theme.colors.textMuted};
+  background: ${theme.colors.bgHover};
+  border: 1px solid ${theme.colors.border};
+  padding: 2px 8px;
+  border-radius: ${theme.radii.full};
+`;
+
+const MetaRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
 `;
 
 const MetaItem = styled.span`
@@ -119,6 +150,40 @@ const Slots = styled.span<{ $isFull: boolean }>`
   color: ${({ $isFull }) => ($isFull ? theme.colors.full : theme.colors.accent)};
 `;
 
+const HostLine = styled.div`
+  font-size: 12px;
+  color: ${theme.colors.textDim};
+  margin-bottom: 12px;
+`;
+
+const ActionBtn = styled.button<{ $variant: "green" | "purple" | "gray" }>`
+  width: 100%;
+  padding: 10px;
+  border-radius: ${theme.radii.md};
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: ${({ $variant }) =>
+    $variant === "green"
+      ? "none"
+      : $variant === "purple"
+      ? `1px solid ${theme.colors.primary}`
+      : `1px solid ${theme.colors.border}`};
+  background: ${({ $variant }) =>
+    $variant === "green" ? theme.colors.success : "transparent"};
+  color: ${({ $variant }) =>
+    $variant === "green"
+      ? "#fff"
+      : $variant === "purple"
+      ? theme.colors.primary
+      : theme.colors.textMuted};
+
+  &:hover {
+    opacity: 0.85;
+  }
+`;
+
 const langLabel: Record<string, string> = {
   th: "ไทย",
   en: "EN",
@@ -126,23 +191,63 @@ const langLabel: Record<string, string> = {
 };
 
 export default function PartyCard({ party }: Props) {
-  const isFull = party.current_members >= party.max_members;
+  const isFull = party.current_members >= party.max_members || party.status === "full";
+  const effectiveStatus = isFull ? "full" : party.status;
+  const hasPending = (party.pending_count ?? 0) > 0 && party.join_mode === "approve";
+
+  let actionBtn: React.ReactNode = null;
+  if (effectiveStatus === "full") {
+    actionBtn = (
+      <ActionBtn $variant="gray" onClick={(e) => e.preventDefault()}>
+        🔔 NOTIFY ME WHEN OPEN
+      </ActionBtn>
+    );
+  } else if (effectiveStatus === "open" && party.join_mode === "auto") {
+    actionBtn = (
+      <ActionBtn $variant="green" onClick={(e) => e.preventDefault()}>
+        ⚡ JOIN PARTY
+      </ActionBtn>
+    );
+  } else if (effectiveStatus === "open" && party.join_mode === "approve") {
+    actionBtn = (
+      <ActionBtn $variant="purple" onClick={(e) => e.preventDefault()}>
+        📨 REQUEST TO JOIN
+      </ActionBtn>
+    );
+  }
 
   return (
-    <Card href={`/parties/${party.id}`}>
-      <Top>
-        <GameTag>{party.game_name ?? party.game}</GameTag>
-        <StatusBadge $status={isFull ? "full" : party.status}>
-          {isFull ? "เต็มแล้ว" : party.status === "open" ? "เปิดรับ" : "ปิด"}
-        </StatusBadge>
-      </Top>
+    <Card>
+      <CardLink href={`/parties/${party.id}`}>
+        <Top>
+          <GameTag>{party.game_name ?? party.game}</GameTag>
+          <BadgeRow>
+            {hasPending && (
+              <PendingBadge>⏳ {party.pending_count} pending</PendingBadge>
+            )}
+            <StatusBadge $status={effectiveStatus}>
+              {effectiveStatus === "open"
+                ? "เปิดรับ"
+                : effectiveStatus === "full"
+                ? "เต็มแล้ว"
+                : "ปิด"}
+            </StatusBadge>
+          </BadgeRow>
+        </Top>
 
-      <Title>{party.title}</Title>
+        <Title>{party.title}</Title>
 
-      {party.description && <Description>{party.description}</Description>}
+        {party.description && <Description>{party.description}</Description>}
 
-      <Footer>
-        <Meta>
+        {party.tags && party.tags.length > 0 && (
+          <TagRow>
+            {party.tags.map((tag) => (
+              <Tag key={tag}>#{tag}</Tag>
+            ))}
+          </TagRow>
+        )}
+
+        <MetaRow>
           <MetaItem>
             <Users size={12} />
             <Slots $isFull={isFull}>
@@ -161,14 +266,22 @@ export default function PartyCard({ party }: Props) {
               {party.required_rank}
             </MetaItem>
           )}
-        </Meta>
+
+          <MetaItem>
+            {party.join_mode === "auto" ? "🔓 Auto" : "🔒 Approve"}
+          </MetaItem>
+
+          {party.discord_voice_link && (
+            <MetaItem style={{ color: "#5865f2" }}>🎙 Discord</MetaItem>
+          )}
+        </MetaRow>
 
         {party.host_name && (
-          <MetaItem>
-            โดย {party.host_name}
-          </MetaItem>
+          <HostLine>โดย {party.host_name}</HostLine>
         )}
-      </Footer>
+      </CardLink>
+
+      {actionBtn}
     </Card>
   );
 }

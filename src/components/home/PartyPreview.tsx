@@ -21,6 +21,7 @@ const MOCK_PARTIES: (Party & { game_name: string; host_name: string })[] = [
     description: "ต้องการ DPS gear score 450+ รู้จัก rotation ของ class ตัวเอง ไม่ toxic",
     required_rank: "450+ GS",
     language: "th",
+    join_mode: "approve",
     created_at: new Date().toISOString(),
   },
   {
@@ -36,6 +37,7 @@ const MOCK_PARTIES: (Party & { game_name: string; host_name: string })[] = [
     description: "ปาร์ตี้ ranked เน้น communication และ IGL ที่ดี มีไมค์บังคับ",
     required_rank: "Platinum+",
     language: "th",
+    join_mode: "approve",
     created_at: new Date().toISOString(),
   },
   {
@@ -50,6 +52,7 @@ const MOCK_PARTIES: (Party & { game_name: string; host_name: string })[] = [
     status: "open",
     description: "เล่น survival กัน ไม่เร่ง ชิล ๆ มีออก stream ด้วย",
     language: "both",
+    join_mode: "auto",
     created_at: new Date().toISOString(),
   },
   {
@@ -64,6 +67,7 @@ const MOCK_PARTIES: (Party & { game_name: string; host_name: string })[] = [
     status: "open",
     description: "Static ใหม่สำหรับคนอยากเรียน Savage ไม่ต้องมีประสบการณ์ก็ได้",
     language: "th",
+    join_mode: "auto",
     created_at: new Date().toISOString(),
   },
 ];
