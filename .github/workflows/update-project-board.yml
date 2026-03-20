@@ -1,0 +1,151 @@
+name: Update Project Board
+
+on:
+  pull_request:
+    types: [opened, converted_to_draft, ready_for_review, closed]
+  issues:
+    types: [opened, closed, reopened]
+
+jobs:
+  update-board:
+    runs-on: ubuntu-latest
+    permissions:
+      repository-projects: write
+      contents: read
+
+    steps:
+      - name: Move item to correct status
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PROJECT_TOKEN }}
+          script: |
+            const projectNumber = parseInt(process.env.PROJECT_NUMBER);
+            const owner = context.repo.owner;
+
+            // Determine the target status based on event
+            let targetStatus;
+            const eventName = context.eventName;
+            const action = context.payload.action;
+
+            if (eventName === 'pull_request') {
+              if (action === 'opened' || action === 'ready_for_review') {
+                targetStatus = 'In Progress';
+              } else if (action === 'converted_to_draft') {
+                targetStatus = 'In Progress';
+              } else if (action === 'closed' && context.payload.pull_request.merged) {
+                targetStatus = 'Done';
+              } else if (action === 'closed' && !context.payload.pull_request.merged) {
+                targetStatus = 'Todo';
+              }
+            } else if (eventName === 'issues') {
+              if (action === 'opened' || action === 'reopened') {
+                targetStatus = 'Todo';
+              } else if (action === 'closed') {
+                targetStatus = 'Done';
+              }
+            }
+
+            if (!targetStatus) {
+              console.log('No status change needed for this event.');
+              return;
+            }
+
+            console.log(`Target status: ${targetStatus}`);
+
+            // Get the project ID
+            const projectQuery = await github.graphql(`
+              query($owner: String!, $number: Int!) {
+                organization(login: $owner) {
+                  projectV2(number: $number) {
+                    id
+                    fields(first: 20) {
+                      nodes {
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          options { id name }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `, { owner, number: projectNumber }).catch(async () => {
+              // Try as user project if org query fails
+              return github.graphql(`
+                query($owner: String!, $number: Int!) {
+                  user(login: $owner) {
+                    projectV2(number: $number) {
+                      id
+                      fields(first: 20) {
+                        nodes {
+                          ... on ProjectV2SingleSelectField {
+                            id
+                            name
+                            options { id name }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `, { owner, number: projectNumber });
+            });
+
+            const project = projectQuery.organization?.projectV2 || projectQuery.user?.projectV2;
+            if (!project) {
+              console.log('Project not found. Check PROJECT_NUMBER secret.');
+              return;
+            }
+
+            // Find the Status field and target option
+            const statusField = project.fields.nodes.find(f => f.name === 'Status');
+            if (!statusField) {
+              console.log('Status field not found in project.');
+              return;
+            }
+
+            const targetOption = statusField.options.find(o => o.name === targetStatus);
+            if (!targetOption) {
+              console.log(`Status option "${targetStatus}" not found. Available: ${statusField.options.map(o => o.name).join(', ')}`);
+              return;
+            }
+
+            // Get the node ID of the issue/PR
+            const nodeId = context.eventName === 'pull_request'
+              ? context.payload.pull_request.node_id
+              : context.payload.issue.node_id;
+
+            // Add item to project (or get existing item)
+            const addResult = await github.graphql(`
+              mutation($projectId: ID!, $contentId: ID!) {
+                addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+                  item { id }
+                }
+              }
+            `, { projectId: project.id, contentId: nodeId });
+
+            const itemId = addResult.addProjectV2ItemById.item.id;
+
+            // Update the status
+            await github.graphql(`
+              mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $projectId
+                  itemId: $itemId
+                  fieldId: $fieldId
+                  value: { singleSelectOptionId: $optionId }
+                }) {
+                  projectV2Item { id }
+                }
+              }
+            `, {
+              projectId: project.id,
+              itemId,
+              fieldId: statusField.id,
+              optionId: targetOption.id,
+            });
+
+            console.log(`✅ Moved item to "${targetStatus}"`);
+        env:
+          PROJECT_NUMBER: ${{ secrets.PROJECT_NUMBER }}

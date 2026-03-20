@@ -19,6 +19,12 @@ const Inner = styled.div`
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 20px;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
 `;
 
 const Brand = styled.div`

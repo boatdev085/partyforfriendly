@@ -76,6 +76,7 @@ const LoginBtn = styled(Link)`
   background: ${theme.colors.primary};
   color: #fff;
   transition: background 0.15s;
+  white-space: nowrap;
 
   &:hover {
     background: ${theme.colors.primaryHover};
