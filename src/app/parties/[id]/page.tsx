@@ -10,52 +10,52 @@ import PartyInfoCard from "@/components/room/PartyInfoCard";
 const MOCK_MESSAGES: ChatMessage[] = [
   {
     id: "1",
-    userId: "u2",
-    username: "ProPlayer99",
-    text: "ใครจะ top บ้างครับ?",
+    userId: "u1",
+    username: "SomchaiXX",
+    text: "สวัสดีครับ พร้อมแล้ว! 👋",
     time: "20:01",
     isSelf: false,
   },
   {
     id: "2",
-    userId: "u1",
-    username: "คุณ",
-    text: "ผม top ได้เลยครับ",
+    userId: "u2",
+    username: "NongMin99",
+    text: "มาเลยๆ 🔥",
     time: "20:02",
-    isSelf: true,
+    isSelf: false,
   },
   {
     id: "3",
     userId: "u3",
-    username: "NightOwl",
-    text: "ผม jungle นะ",
-    time: "20:03",
-    isSelf: false,
+    username: "คุณ",
+    text: "โอเคครับ พร้อม! 🎮",
+    time: "20:04",
+    isSelf: true,
   },
 ];
 
 const MOCK_MEMBERS: Member[] = [
   {
     id: "u1",
-    username: "คุณ",
-    isLeader: false,
+    username: "SomchaiXX",
+    isLeader: true,
     isOnline: true,
     rating: 4.8,
-    isSelf: true,
   },
   {
     id: "u2",
-    username: "ProPlayer99",
-    isLeader: true,
+    username: "NongMin99",
+    isLeader: false,
     isOnline: true,
     rating: 4.5,
   },
   {
     id: "u3",
-    username: "NightOwl",
+    username: "คุณ",
     isLeader: false,
     isOnline: true,
     rating: 4.2,
+    isSelf: true,
   },
 ];
 
@@ -201,7 +201,7 @@ export default function PartyRoomPage() {
         <OpenBadge>OPEN</OpenBadge>
         <GameTag>ROV</GameTag>
         <SlotCount>3/5</SlotCount>
-        <LeaveBtn onClick={() => router.push("/parties")}>ออกจาก Party</LeaveBtn>
+        <LeaveBtn onClick={() => router.push("/parties")}>🚪 ออก Party</LeaveBtn>
       </Topbar>
 
       <Content>
