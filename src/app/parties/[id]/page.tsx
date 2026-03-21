@@ -455,7 +455,7 @@ function PartyRoomContent({
             ⭐ ให้คะแนน
           </RateBtn>
         )}
-        {(isMember || isHost) && (
+        {isMember && !isHost && (
           <LeaveBtn onClick={handleLeave}>🚪 ออก Party</LeaveBtn>
         )}
       </Topbar>
@@ -497,19 +497,27 @@ function PartyRoomContent({
 // PartyRoomPage — outer component: fetches initial data, shows skeleton
 // ---------------------------------------------------------------------------
 
-function getDevUserIdFromCookie(): string {
-  if (typeof document === "undefined") return "";
-  const match = document.cookie.match(/(^| )dev-user-id=([^;]+)/);
-  return match ? decodeURIComponent(match[2]) : "";
-}
+// Must match the default in src/lib/dev-auth.ts
+const DEFAULT_DEV_USER_ID = "6141de95-a2b7-4675-914e-92cdbd734296";
 
 export default function PartyRoomPage() {
   const params = useParams();
   const partyId = params.id as string;
   const { data: session } = useSession();
-  const isDev = process.env.NODE_ENV === "development";
-  const devUserId = isDev ? getDevUserIdFromCookie() : "";
-  const currentUserId = devUserId || (session?.user?.id ?? "");
+
+  // Read currentUserId in useEffect (after mount) to avoid SSR/hydration mismatch.
+  // In dev mode: read dev-user-id cookie, fall back to DEFAULT_DEV_USER_ID.
+  // In production: use session user id.
+  const [currentUserId, setCurrentUserId] = useState("");
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      const match = document.cookie.match(/(^| )dev-user-id=([^;]+)/);
+      setCurrentUserId(match ? decodeURIComponent(match[2]) : DEFAULT_DEV_USER_ID);
+    } else if (session?.user?.id) {
+      setCurrentUserId(session.user.id);
+    }
+  }, [session?.user?.id]);
+
   const currentUserName = session?.user?.name ?? "";
 
   const [party, setParty] = useState<PartyData | null>(null);
