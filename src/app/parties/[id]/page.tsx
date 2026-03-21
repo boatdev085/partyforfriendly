@@ -455,7 +455,9 @@ function PartyRoomContent({
             ⭐ ให้คะแนน
           </RateBtn>
         )}
-        <LeaveBtn onClick={handleLeave}>🚪 ออก Party</LeaveBtn>
+        {(isMember || isHost) && (
+          <LeaveBtn onClick={handleLeave}>🚪 ออก Party</LeaveBtn>
+        )}
       </Topbar>
 
       <Content>
@@ -495,11 +497,19 @@ function PartyRoomContent({
 // PartyRoomPage — outer component: fetches initial data, shows skeleton
 // ---------------------------------------------------------------------------
 
+function getDevUserIdFromCookie(): string {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie.match(/(^| )dev-user-id=([^;]+)/);
+  return match ? decodeURIComponent(match[2]) : "";
+}
+
 export default function PartyRoomPage() {
   const params = useParams();
   const partyId = params.id as string;
   const { data: session } = useSession();
-  const currentUserId = session?.user?.id ?? "";
+  const isDev = process.env.NODE_ENV === "development";
+  const devUserId = isDev ? getDevUserIdFromCookie() : "";
+  const currentUserId = devUserId || session?.user?.id ?? "";
   const currentUserName = session?.user?.name ?? "";
 
   const [party, setParty] = useState<PartyData | null>(null);
