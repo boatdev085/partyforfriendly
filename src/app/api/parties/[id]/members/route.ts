@@ -7,6 +7,7 @@
  */
 import { NextRequest, NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
+import { getDevUserId } from "@/lib/dev-auth"
 import { getPartyMembers } from "@/lib/party-members"
 import { createClient } from "@/lib/supabase/server"
 
@@ -16,8 +17,12 @@ export async function GET(
   _req: NextRequest,
   { params }: RouteContext,
 ): Promise<NextResponse> {
+  const isDev = process.env.NODE_ENV === "development"
   const session = await getSession()
-  if (!session?.user?.id) {
+  const userId = isDev
+    ? (session?.user?.id ?? await getDevUserId())
+    : session?.user?.id
+  if (!userId) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
 
