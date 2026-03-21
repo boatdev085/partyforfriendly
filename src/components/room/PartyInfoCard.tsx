@@ -55,7 +55,12 @@ const Slots = styled.span<{ $isFull: boolean }>`
 
 export default function PartyInfoCard({ game, joinMode, current, max }: Props) {
   const isFull = current >= max;
-  const modeLabel = joinMode === "auto" ? "🔓 Auto" : "🔒 Approve";
+  const modeLabel =
+    joinMode === "open" || joinMode === "auto"
+      ? "🔓 เปิด"
+      : joinMode === "request"
+      ? "🔒 ขออนุมัติ"
+      : "🔒 Invite Only";
 
   return (
     <Card>

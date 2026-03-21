@@ -1,730 +1,404 @@
-"use client";
+'use client';
 
-import { useState, KeyboardEvent } from "react";
-import { useRouter } from "next/navigation";
-import styled from "styled-components";
-import { theme } from "@/styles/theme";
-import toast, { Toaster } from "react-hot-toast";
-import AuthGuard from "@/components/auth/AuthGuard";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import styled from 'styled-components';
+import toast from 'react-hot-toast';
+import { theme } from '@/styles/theme';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type Game = "rov" | "valorant" | "pubg" | "freefire" | "";
-type JoinMode = "auto" | "approve";
-
-interface FormData {
-  partyName: string;
-  game: Game;
-  maxMembers: number;
-  description: string;
-  joinMode: JoinMode;
-  discordLink: string;
-  tags: string[];
-}
-
-interface FormErrors {
-  partyName?: string;
-  game?: string;
-}
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const GAMES: { value: Game; label: string; icon: string }[] = [
-  { value: "rov", label: "ROV", icon: "⚔️" },
-  { value: "valorant", label: "Valorant", icon: "🔫" },
-  { value: "pubg", label: "PUBG", icon: "🪖" },
-  { value: "freefire", label: "Free Fire", icon: "🔥" },
-];
-
-const MEMBER_OPTIONS = [2, 3, 4, 5, 6, 10];
-
-const PRESET_TAGS = ["Diamond+", "ไม่ toxic", "ซีเรียส", "สบายๆ"];
-
-// ─── Styled Components ────────────────────────────────────────────────────────
-
-const Page = styled.main`
-  min-height: 100vh;
-  background: ${theme.colors.bg};
-  padding: 32px 24px 64px;
-
-  @media (max-width: 768px) {
-    padding: 20px 16px 48px;
-  }
+const FormContainer = styled.div`
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 0 1rem;
 `;
 
-const Container = styled.div`
-  max-width: 640px;
-  margin: 0 auto;
+const FormGroup = styled.div`
+  margin-bottom: 1.5rem;
 `;
 
-const PageHeader = styled.div`
-  margin-bottom: 24px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 800;
+const Label = styled.label`
+  display: block;
+  margin-bottom: 0.5rem;
   color: ${theme.colors.text};
-  margin-bottom: 4px;
-
-  @media (max-width: 480px) {
-    font-size: 20px;
-  }
+  font-weight: 600;
+  font-size: 0.95rem;
 `;
 
-const PageSub = styled.p`
-  font-size: 14px;
-  color: ${theme.colors.textMuted};
-`;
-
-const Card = styled.div`
-  background: ${theme.colors.bgCard};
-  border: 1px solid ${theme.colors.border};
-  border-radius: ${theme.radii.lg};
-  padding: 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-
-  @media (max-width: 480px) {
-    padding: 20px 16px;
-    gap: 22px;
-  }
-`;
-
-const Section = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-`;
-
-const SectionLabel = styled.label`
-  font-size: 13px;
-  font-weight: 700;
-  color: ${theme.colors.textMuted};
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-`;
-
-const Input = styled.input<{ $hasError?: boolean }>`
+const Input = styled.input`
   width: 100%;
-  background: ${theme.colors.bg};
-  border: 1.5px solid ${({ $hasError }) => ($hasError ? theme.colors.danger : theme.colors.border)};
-  border-radius: ${theme.radii.md};
-  padding: 11px 14px;
-  font-size: 14px;
+  padding: 0.75rem;
+  border: 1px solid ${theme.colors.border};
+  border-radius: 8px;
+  background-color: ${theme.colors.bgCard};
   color: ${theme.colors.text};
-  font-family: ${theme.fonts.sans};
-  outline: none;
-  transition: border-color 0.15s;
-  box-sizing: border-box;
-
-  &::placeholder {
-    color: ${theme.colors.textDim};
-  }
+  font-size: 1rem;
+  transition: border-color 0.2s;
 
   &:focus {
-    border-color: ${({ $hasError }) => ($hasError ? theme.colors.danger : theme.colors.primary)};
+    outline: none;
+    border-color: ${theme.colors.primary};
+  }
+
+  &::placeholder {
+    color: ${theme.colors.textMuted};
+  }
+`;
+
+const Select = styled.select`
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid ${theme.colors.border};
+  border-radius: 8px;
+  background-color: ${theme.colors.bgCard};
+  color: ${theme.colors.text};
+  font-size: 1rem;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: ${theme.colors.primary};
+  }
+
+  option {
+    background-color: ${theme.colors.bgCard};
+    color: ${theme.colors.text};
   }
 `;
 
 const Textarea = styled.textarea`
   width: 100%;
-  background: ${theme.colors.bg};
-  border: 1.5px solid ${theme.colors.border};
-  border-radius: ${theme.radii.md};
-  padding: 11px 14px;
-  font-size: 14px;
+  padding: 0.75rem;
+  border: 1px solid ${theme.colors.border};
+  border-radius: 8px;
+  background-color: ${theme.colors.bgCard};
   color: ${theme.colors.text};
-  font-family: ${theme.fonts.sans};
-  outline: none;
+  font-size: 1rem;
+  font-family: inherit;
   resize: vertical;
-  min-height: 90px;
-  transition: border-color 0.15s;
-  box-sizing: border-box;
-
-  &::placeholder {
-    color: ${theme.colors.textDim};
-  }
+  min-height: 120px;
+  transition: border-color 0.2s;
 
   &:focus {
+    outline: none;
     border-color: ${theme.colors.primary};
   }
-`;
 
-const Select = styled.select<{ $hasError?: boolean }>`
-  width: 100%;
-  background: ${theme.colors.bg};
-  border: 1.5px solid ${({ $hasError }) => ($hasError ? theme.colors.danger : theme.colors.border)};
-  border-radius: ${theme.radii.md};
-  padding: 11px 14px;
-  font-size: 14px;
-  color: ${theme.colors.text};
-  font-family: ${theme.fonts.sans};
-  outline: none;
-  cursor: pointer;
-  appearance: none;
-  transition: border-color 0.15s;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: ${({ $hasError }) => ($hasError ? theme.colors.danger : theme.colors.primary)};
-  }
-
-  option {
-    background: ${theme.colors.bgCard};
-    color: ${theme.colors.text};
-  }
-`;
-
-const SelectWrapper = styled.div`
-  position: relative;
-
-  &::after {
-    content: "▾";
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    transform: translateY(-50%);
+  &::placeholder {
     color: ${theme.colors.textMuted};
-    pointer-events: none;
-    font-size: 12px;
   }
 `;
 
-const ErrorMsg = styled.p`
-  font-size: 12px;
-  color: ${theme.colors.danger};
-  margin-top: -4px;
+const TagsHint = styled.p`
+  font-size: 0.85rem;
+  color: ${theme.colors.textMuted};
+  margin-top: 0.25rem;
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 2rem;
 `;
 
-const ToggleBtn = styled.button<{ $active: boolean }>`
-  padding: 8px 18px;
-  border-radius: ${theme.radii.md};
-  font-size: 14px;
-  font-weight: 600;
-  font-family: ${theme.fonts.sans};
-  cursor: pointer;
-  transition: all 0.15s;
-  border: 2px solid ${({ $active }) => ($active ? theme.colors.primary : theme.colors.border)};
-  background: ${({ $active }) => ($active ? theme.colors.primaryGlow : "transparent")};
-  color: ${({ $active }) => ($active ? theme.colors.primary : theme.colors.textMuted)};
-
-  &:hover {
-    border-color: ${theme.colors.primary};
-    color: ${theme.colors.primary};
-  }
-`;
-
-const JoinModeGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-
-  @media (max-width: 380px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const JoinCard = styled.button<{ $active: boolean }>`
-  padding: 16px;
-  border-radius: ${theme.radii.md};
-  border: 2px solid ${({ $active }) => ($active ? theme.colors.primary : theme.colors.border)};
-  background: ${({ $active }) => ($active ? theme.colors.primaryGlow : "transparent")};
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.15s;
-  font-family: ${theme.fonts.sans};
-
-  &:hover {
-    border-color: ${theme.colors.primary};
-  }
-`;
-
-const JoinCardTitle = styled.div<{ $active: boolean }>`
-  font-size: 15px;
-  font-weight: 700;
-  color: ${({ $active }) => ($active ? theme.colors.primary : theme.colors.text)};
-  margin-bottom: 4px;
-`;
-
-const JoinCardDesc = styled.div`
-  font-size: 12px;
-  color: ${theme.colors.textMuted};
-  line-height: 1.5;
-`;
-
-const TagsArea = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-`;
-
-const ChipsRow = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-`;
-
-const PresetChip = styled.button<{ $active: boolean }>`
-  padding: 6px 14px;
-  border-radius: ${theme.radii.full};
-  font-size: 13px;
-  font-weight: 600;
-  font-family: ${theme.fonts.sans};
-  cursor: pointer;
-  transition: all 0.15s;
-  border: 1.5px solid ${({ $active }) => ($active ? theme.colors.primary : theme.colors.border)};
-  background: ${({ $active }) => ($active ? theme.colors.primaryGlow : "transparent")};
-  color: ${({ $active }) => ($active ? theme.colors.primary : theme.colors.textMuted)};
-
-  &:hover {
-    border-color: ${theme.colors.primary};
-    color: ${theme.colors.primary};
-  }
-`;
-
-const SelectedChip = styled.span`
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px 5px 12px;
-  border-radius: ${theme.radii.full};
-  background: ${theme.colors.primaryGlow};
-  border: 1.5px solid ${theme.colors.primary};
-  color: ${theme.colors.primary};
-  font-size: 13px;
-  font-weight: 600;
-`;
-
-const RemoveBtn = styled.button`
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: ${theme.colors.primary};
-  font-size: 14px;
-  line-height: 1;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  opacity: 0.7;
-  font-family: ${theme.fonts.sans};
-
-  &:hover {
-    opacity: 1;
-  }
-`;
-
-const TagInputRow = styled.div`
-  display: flex;
-  gap: 8px;
-`;
-
-const TagInput = styled.input`
+const SubmitButton = styled.button`
   flex: 1;
-  background: ${theme.colors.bg};
-  border: 1.5px solid ${theme.colors.border};
-  border-radius: ${theme.radii.md};
-  padding: 9px 12px;
-  font-size: 13px;
-  color: ${theme.colors.text};
-  font-family: ${theme.fonts.sans};
-  outline: none;
-  transition: border-color 0.15s;
-
-  &::placeholder {
-    color: ${theme.colors.textDim};
-  }
-
-  &:focus {
-    border-color: ${theme.colors.primary};
-  }
-`;
-
-const AddTagBtn = styled.button`
-  background: ${theme.colors.primary};
+  padding: 0.75rem 1.5rem;
+  background-color: ${theme.colors.primary};
+  color: white;
   border: none;
-  border-radius: ${theme.radii.md};
-  padding: 9px 14px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  cursor: pointer;
-  font-family: ${theme.fonts.sans};
-  white-space: nowrap;
-  transition: background 0.15s;
-
-  &:hover {
-    background: ${theme.colors.primaryHover};
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-`;
-
-const Divider = styled.hr`
-  border: none;
-  border-top: 1px solid ${theme.colors.border};
-  margin: 0;
-`;
-
-const Footer = styled.div`
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-
-  @media (max-width: 480px) {
-    flex-direction: column-reverse;
-  }
-`;
-
-const BtnCancel = styled.button`
-  padding: 12px 24px;
-  border-radius: ${theme.radii.md};
-  border: 1.5px solid ${theme.colors.border};
-  background: transparent;
-  color: ${theme.colors.textMuted};
-  font-size: 14px;
+  border-radius: 8px;
+  font-size: 1rem;
   font-weight: 600;
-  font-family: ${theme.fonts.sans};
   cursor: pointer;
-  transition: all 0.15s;
+  transition: opacity 0.2s;
 
   &:hover {
-    border-color: ${theme.colors.borderLight};
-    color: ${theme.colors.text};
-  }
-
-  @media (max-width: 480px) {
-    width: 100%;
-  }
-`;
-
-const BtnSubmit = styled.button`
-  padding: 12px 28px;
-  border-radius: ${theme.radii.md};
-  border: none;
-  background: ${theme.colors.primary};
-  color: #fff;
-  font-size: 15px;
-  font-weight: 700;
-  font-family: ${theme.fonts.sans};
-  cursor: pointer;
-  transition: background 0.15s;
-
-  &:hover {
-    background: ${theme.colors.primaryHover};
+    opacity: 0.9;
   }
 
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
-  }
-
-  @media (max-width: 480px) {
-    width: 100%;
   }
 `;
 
-// ─── Page Component ───────────────────────────────────────────────────────────
+const CancelButton = styled.button`
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  background-color: ${theme.colors.bgCard};
+  color: ${theme.colors.text};
+  border: 1px solid ${theme.colors.border};
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: ${theme.colors.bg};
+  }
+`;
+
+const Title = styled.h1`
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: ${theme.colors.text};
+  margin-bottom: 2rem;
+`;
+
+interface FormData {
+  title: string;
+  game_id: string;
+  description: string;
+  join_mode: string;
+  max_members: string;
+  tags: string;
+  discord_voice_link: string;
+  scheduled_at: string;
+}
 
 export default function CreatePartyPage() {
   const router = useRouter();
-
-  const [form, setForm] = useState<FormData>({
-    partyName: "",
-    game: "",
-    maxMembers: 5,
-    description: "",
-    joinMode: "auto",
-    discordLink: "",
-    tags: [],
+  const [games, setGames] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingGames, setLoadingGames] = useState(true);
+  const [formData, setFormData] = useState<FormData>({
+    title: '',
+    game_id: '',
+    description: '',
+    join_mode: 'open',
+    max_members: '4',
+    tags: '',
+    discord_voice_link: '',
+    scheduled_at: '',
   });
 
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [tagInput, setTagInput] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  // Fetch games on mount
+  useEffect(() => {
+    const fetchGames = async () => {
+      try {
+        const response = await fetch('/api/games');
+        if (response.ok) {
+          const data = await response.json();
+          setGames(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch games:', err);
+        toast.error('ไม่สามารถโหลดรายชื่อเกมได้');
+      } finally {
+        setLoadingGames(false);
+      }
+    };
 
-  // ── Validation ─────────────────────────────────────────────────────────────
+    fetchGames();
+  }, []);
 
-  function validate(): boolean {
-    const newErrors: FormErrors = {};
-    if (!form.partyName.trim()) newErrors.partyName = "กรุณากรอกชื่อ Party";
-    if (!form.game) newErrors.game = "กรุณาเลือกเกม";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }
-
-  // ── Handlers ───────────────────────────────────────────────────────────────
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!validate()) return;
-
-    setSubmitting(true);
-    console.log("formData:", form);
-
-    setTimeout(() => {
-      setSubmitting(false);
-      toast.success("🎉 สร้าง Party สำเร็จ!", {
-        style: {
-          background: theme.colors.bgCard,
-          color: theme.colors.text,
-          border: `1px solid ${theme.colors.border}`,
-        },
-      });
-      setTimeout(() => router.push("/parties"), 1200);
-    }, 600);
-  }
-
-  function toggleTag(tag: string) {
-    setForm((prev) => ({
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
       ...prev,
-      tags: prev.tags.includes(tag)
-        ? prev.tags.filter((t) => t !== tag)
-        : [...prev.tags, tag],
+      [name]: value,
     }));
-  }
+  };
 
-  function removeTag(tag: string) {
-    setForm((prev) => ({ ...prev, tags: prev.tags.filter((t) => t !== tag) }));
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  function addCustomTag() {
-    const val = tagInput.trim();
-    if (!val || form.tags.includes(val)) return;
-    setForm((prev) => ({ ...prev, tags: [...prev.tags, val] }));
-    setTagInput("");
-  }
-
-  function handleTagKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addCustomTag();
+    // Validation
+    if (!formData.title.trim()) {
+      toast.error('โปรดกรอกชื่อปาร์ตี้');
+      return;
     }
-  }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+    if (!formData.game_id) {
+      toast.error('โปรดเลือกเกม');
+      return;
+    }
+
+    const maxMembers = parseInt(formData.max_members);
+    if (isNaN(maxMembers) || maxMembers < 2) {
+      toast.error('จำนวนสมาชิกสูงสุดต้องเป็นอย่างน้อย 2');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Parse tags
+      const tags = formData.tags
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+
+      const payload = {
+        title: formData.title.trim(),
+        game_id: formData.game_id,
+        description: formData.description.trim(),
+        join_mode: formData.join_mode,
+        max_members: maxMembers,
+        tags,
+        discord_voice_link: formData.discord_voice_link.trim() || null,
+        scheduled_at: formData.scheduled_at || null,
+      };
+
+      const response = await fetch('/api/parties', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        toast.error(error.error || 'ไม่สามารถสร้างปาร์ตี้ได้');
+        return;
+      }
+
+      const newParty = await response.json();
+      toast.success('สร้างปาร์ตี้สำเร็จ');
+
+      // Redirect to party room
+      router.push(`/parties/${newParty.id}`);
+    } catch (err) {
+      console.error('Create party error:', err);
+      toast.error('เกิดข้อผิดพลาด โปรดลองใหม่อีกครั้ง');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <AuthGuard>
-    <Page>
-      <Toaster position="top-center" />
-      <Container>
-        <PageHeader>
-          <PageTitle>🎮 สร้าง Party</PageTitle>
-          <PageSub>ตั้งค่า Party และรอเพื่อนเข้าร่วม</PageSub>
-        </PageHeader>
+    <FormContainer>
+      <Title>สร้างปาร์ตี้</Title>
 
-        <form onSubmit={handleSubmit} noValidate>
-          <Card>
-            {/* Party Name */}
-            <Section>
-              <SectionLabel htmlFor="partyName">📌 ชื่อ Party</SectionLabel>
-              <Input
-                id="partyName"
-                type="text"
-                placeholder="ชื่อ Party ของคุณ..."
-                value={form.partyName}
-                $hasError={!!errors.partyName}
-                onChange={(e) => {
-                  setForm((prev) => ({ ...prev, partyName: e.target.value }));
-                  if (errors.partyName) setErrors((prev) => ({ ...prev, partyName: undefined }));
-                }}
-              />
-              {errors.partyName && <ErrorMsg>{errors.partyName}</ErrorMsg>}
-            </Section>
+      <form onSubmit={handleSubmit}>
+        <FormGroup>
+          <Label htmlFor="title">ชื่อปาร์ตี้ *</Label>
+          <Input
+            type="text"
+            id="title"
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            placeholder="เช่น ค้นหาคนเล่น Valorant"
+            disabled={loading}
+          />
+        </FormGroup>
 
-            <Divider />
+        <FormGroup>
+          <Label htmlFor="game_id">เลือกเกม *</Label>
+          <Select
+            id="game_id"
+            name="game_id"
+            value={formData.game_id}
+            onChange={handleChange}
+            disabled={loading || loadingGames}
+          >
+            <option value="">-- เลือกเกม --</option>
+            {games.map((game) => (
+              <option key={game.id} value={game.id}>
+                {game.name}
+              </option>
+            ))}
+          </Select>
+        </FormGroup>
 
-            {/* Game */}
-            <Section>
-              <SectionLabel htmlFor="game">🎮 เกม</SectionLabel>
-              <SelectWrapper>
-                <Select
-                  id="game"
-                  value={form.game}
-                  $hasError={!!errors.game}
-                  onChange={(e) => {
-                    setForm((prev) => ({ ...prev, game: e.target.value as Game }));
-                    if (errors.game) setErrors((prev) => ({ ...prev, game: undefined }));
-                  }}
-                >
-                  <option value="">เลือกเกม...</option>
-                  {GAMES.map((g) => (
-                    <option key={g.value} value={g.value}>
-                      {g.icon} {g.label}
-                    </option>
-                  ))}
-                </Select>
-              </SelectWrapper>
-              {errors.game && <ErrorMsg>{errors.game}</ErrorMsg>}
-            </Section>
+        <FormGroup>
+          <Label htmlFor="description">รายละเอียด</Label>
+          <Textarea
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            placeholder="บอกเพิ่มเติมเกี่ยวกับปาร์ตี้ของคุณ..."
+            disabled={loading}
+          />
+        </FormGroup>
 
-            <Divider />
+        <FormGroup>
+          <Label htmlFor="join_mode">วิธีการเข้าร่วม *</Label>
+          <Select
+            id="join_mode"
+            name="join_mode"
+            value={formData.join_mode}
+            onChange={handleChange}
+            disabled={loading}
+          >
+            <option value="open">เปิด (ใครก็เข้าได้)</option>
+            <option value="request">ขอเข้า (ต้องรออนุมัติ)</option>
+            <option value="invite_only">เชิญเท่านั้น</option>
+          </Select>
+        </FormGroup>
 
-            {/* Max Members */}
-            <Section>
-              <SectionLabel>👥 จำนวนสมาชิกสูงสุด</SectionLabel>
-              <ButtonGroup>
-                {MEMBER_OPTIONS.map((n) => (
-                  <ToggleBtn
-                    key={n}
-                    type="button"
-                    $active={form.maxMembers === n}
-                    onClick={() => setForm((prev) => ({ ...prev, maxMembers: n }))}
-                  >
-                    {n}
-                  </ToggleBtn>
-                ))}
-              </ButtonGroup>
-            </Section>
+        <FormGroup>
+          <Label htmlFor="max_members">จำนวนสมาชิกสูงสุด *</Label>
+          <Input
+            type="number"
+            id="max_members"
+            name="max_members"
+            min="2"
+            max="100"
+            value={formData.max_members}
+            onChange={handleChange}
+            disabled={loading}
+          />
+        </FormGroup>
 
-            <Divider />
+        <FormGroup>
+          <Label htmlFor="tags">แท็ก (คั่นด้วยจุลภาค)</Label>
+          <Input
+            type="text"
+            id="tags"
+            name="tags"
+            value={formData.tags}
+            onChange={handleChange}
+            placeholder="เช่น casual, competitive, beginner"
+            disabled={loading}
+          />
+          <TagsHint>เพิ่มแท็กเพื่อให้ผู้เล่นอื่นหาปาร์ตี้ของคุณได้ง่ายขึ้น</TagsHint>
+        </FormGroup>
 
-            {/* Description */}
-            <Section>
-              <SectionLabel htmlFor="description">📝 คำอธิบาย</SectionLabel>
-              <Textarea
-                id="description"
-                placeholder="Diamond+ ช่วยกัน ไม่ toxic..."
-                value={form.description}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, description: e.target.value }))
-                }
-              />
-            </Section>
+        <FormGroup>
+          <Label htmlFor="discord_voice_link">ลิงค์เซิร์ฟเวอร์ Discord (ไม่จำเป็น)</Label>
+          <Input
+            type="url"
+            id="discord_voice_link"
+            name="discord_voice_link"
+            value={formData.discord_voice_link}
+            onChange={handleChange}
+            placeholder="https://discord.gg/..."
+            disabled={loading}
+          />
+        </FormGroup>
 
-            <Divider />
+        <FormGroup>
+          <Label htmlFor="scheduled_at">วันเวลาที่ตั้งไว้ (ไม่จำเป็น)</Label>
+          <Input
+            type="datetime-local"
+            id="scheduled_at"
+            name="scheduled_at"
+            value={formData.scheduled_at}
+            onChange={handleChange}
+            disabled={loading}
+          />
+        </FormGroup>
 
-            {/* Join Mode */}
-            <Section>
-              <SectionLabel>🔐 โหมดเข้าร่วม</SectionLabel>
-              <JoinModeGrid>
-                <JoinCard
-                  type="button"
-                  $active={form.joinMode === "auto"}
-                  onClick={() => setForm((prev) => ({ ...prev, joinMode: "auto" }))}
-                >
-                  <JoinCardTitle $active={form.joinMode === "auto"}>
-                    🔓 Auto Join
-                  </JoinCardTitle>
-                  <JoinCardDesc>เข้าได้เลย ไม่ต้อง approve</JoinCardDesc>
-                </JoinCard>
-                <JoinCard
-                  type="button"
-                  $active={form.joinMode === "approve"}
-                  onClick={() => setForm((prev) => ({ ...prev, joinMode: "approve" }))}
-                >
-                  <JoinCardTitle $active={form.joinMode === "approve"}>
-                    🔒 Approve
-                  </JoinCardTitle>
-                  <JoinCardDesc>ต้อง approve ก่อนเข้า</JoinCardDesc>
-                </JoinCard>
-              </JoinModeGrid>
-            </Section>
-
-            <Divider />
-
-            {/* Discord Link */}
-            <Section>
-              <SectionLabel htmlFor="discordLink">🎙 Discord Voice Link (ไม่บังคับ)</SectionLabel>
-              <Input
-                id="discordLink"
-                type="url"
-                placeholder="https://discord.gg/..."
-                value={form.discordLink}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, discordLink: e.target.value }))
-                }
-              />
-            </Section>
-
-            <Divider />
-
-            {/* Tags */}
-            <Section>
-              <SectionLabel>🏷️ Tags</SectionLabel>
-              <TagsArea>
-                {/* Preset chips */}
-                <ChipsRow>
-                  {PRESET_TAGS.map((tag) => (
-                    <PresetChip
-                      key={tag}
-                      type="button"
-                      $active={form.tags.includes(tag)}
-                      onClick={() => toggleTag(tag)}
-                    >
-                      {tag}
-                    </PresetChip>
-                  ))}
-                </ChipsRow>
-
-                {/* Custom tag input */}
-                <TagInputRow>
-                  <TagInput
-                    type="text"
-                    placeholder="เพิ่ม tag เอง... (กด Enter)"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleTagKeyDown}
-                    maxLength={20}
-                  />
-                  <AddTagBtn
-                    type="button"
-                    onClick={addCustomTag}
-                    disabled={!tagInput.trim()}
-                  >
-                    + เพิ่ม
-                  </AddTagBtn>
-                </TagInputRow>
-
-                {/* Selected tags */}
-                {form.tags.length > 0 && (
-                  <ChipsRow>
-                    {form.tags.map((tag) => (
-                      <SelectedChip key={tag}>
-                        {tag}
-                        <RemoveBtn
-                          type="button"
-                          onClick={() => removeTag(tag)}
-                          aria-label={`ลบ tag ${tag}`}
-                        >
-                          ✕
-                        </RemoveBtn>
-                      </SelectedChip>
-                    ))}
-                  </ChipsRow>
-                )}
-              </TagsArea>
-            </Section>
-
-            <Divider />
-
-            {/* Footer buttons */}
-            <Footer>
-              <BtnCancel type="button" onClick={() => router.back()}>
-                ยกเลิก
-              </BtnCancel>
-              <BtnSubmit type="submit" disabled={submitting}>
-                {submitting ? "กำลังสร้าง..." : "🎮 สร้าง Party"}
-              </BtnSubmit>
-            </Footer>
-          </Card>
-        </form>
-      </Container>
-    </Page>
-    </AuthGuard>
+        <ButtonGroup>
+          <CancelButton
+            type="button"
+            onClick={() => router.back()}
+            disabled={loading}
+          >
+            ยกเลิก
+          </CancelButton>
+          <SubmitButton type="submit" disabled={loading || loadingGames}>
+            {loading ? 'กำลังสร้าง...' : 'สร้างปาร์ตี้'}
+          </SubmitButton>
+        </ButtonGroup>
+      </form>
+    </FormContainer>
   );
 }

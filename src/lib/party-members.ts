@@ -167,6 +167,42 @@ export async function removeMember(
 }
 
 /**
+ * Leave a party safely via the `leave_party_safe` RPC.
+ * Atomically marks the member as left, decrements the counter,
+ * reopens the party if it was full, and auto-promotes the next
+ * pending join request (waitlist FIFO).
+ *
+ * Returns the RPC result or null on unexpected error.
+ */
+export interface LeavePartyResult {
+  success?: boolean
+  promoted_user_id?: string | null
+  error?: string
+}
+
+export async function leaveParty(
+  partyId: string,
+  userId: string,
+): Promise<LeavePartyResult | null> {
+  const supabase = await createClient()
+
+  const { data, error } = await (supabase.rpc as unknown as (
+    fn: string,
+    args: { p_party_id: string; p_user_id: string },
+  ) => Promise<{ data: LeavePartyResult | null; error: { message: string } | null }>)(
+    "leave_party_safe",
+    { p_party_id: partyId, p_user_id: userId },
+  )
+
+  if (error) {
+    console.error("[leaveParty]", error.message)
+    return null
+  }
+
+  return data
+}
+
+/**
  * Kick a member from the party (status → 'kicked').
  * Only the party host should be allowed to call this (enforce via RLS or API layer).
  */

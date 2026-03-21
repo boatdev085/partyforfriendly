@@ -2,21 +2,36 @@
 
 import styled from "styled-components";
 import { theme } from "@/styles/theme";
+import type { ReviewWithRater } from "@/lib/reviews";
 
-interface Review {
-  id: string;
-  reviewer: string;
-  score: number;
-  comment: string;
-  game: string;
-  timeAgo: string;
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
+
+interface Props {
+  reviews: ReviewWithRater[];
+  isLoading?: boolean;
 }
 
-const MOCK_REVIEWS: Review[] = [
-  { id: "r1", reviewer: "TomZaa", score: 5, comment: "เล่นดีมาก ช่วยเหลือทีม!", game: "ROV", timeAgo: "2 วันก่อน" },
-  { id: "r2", reviewer: "MaeMod", score: 5, comment: "อยากเล่นด้วยอีกครับ", game: "Valorant", timeAgo: "5 วันก่อน" },
-  { id: "r3", reviewer: "BaanGamer", score: 4, comment: "เล่นดี แต่ช้านิดนึง", game: "PUBG", timeAgo: "1 สัปดาห์" },
-];
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatTimeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 60) return `${Math.max(1, min)} นาทีที่แล้ว`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} ชั่วโมงที่แล้ว`;
+  const days = Math.floor(hr / 24);
+  if (days === 1) return "เมื่อวาน";
+  if (days < 7) return `${days} วันที่แล้ว`;
+  return `${Math.floor(days / 7)} สัปดาห์ที่แล้ว`;
+}
+
+// ---------------------------------------------------------------------------
+// Styled components
+// ---------------------------------------------------------------------------
 
 const Section = styled.div`
   display: flex;
@@ -37,10 +52,7 @@ const ReviewCard = styled.div`
   padding: 16px 20px;
   box-shadow: ${theme.shadows.card};
   transition: border-color 0.2s;
-
-  &:hover {
-    border-color: ${theme.colors.borderLight};
-  }
+  &:hover { border-color: ${theme.colors.borderLight}; }
 `;
 
 const ReviewTop = styled.div`
@@ -93,16 +105,6 @@ const MetaRow = styled.div`
   flex-shrink: 0;
 `;
 
-const GameLabel = styled.span`
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: ${theme.radii.full};
-  background: rgba(124, 106, 255, 0.12);
-  color: ${theme.colors.primary};
-  border: 1px solid rgba(124, 106, 255, 0.2);
-`;
-
 const TimeAgo = styled.span`
   font-size: 12px;
   color: ${theme.colors.textDim};
@@ -114,36 +116,76 @@ const CommentText = styled.p`
   line-height: 1.5;
 `;
 
+const Empty = styled.div`
+  padding: 32px;
+  text-align: center;
+  font-size: 14px;
+  color: ${theme.colors.textMuted};
+  background: ${theme.colors.bgCard};
+  border: 1px solid ${theme.colors.border};
+  border-radius: ${theme.radii.lg};
+`;
+
+const LoadingText = styled.div`
+  padding: 32px;
+  text-align: center;
+  font-size: 13px;
+  color: ${theme.colors.textMuted};
+`;
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 function getInitials(name: string) {
   return name.slice(0, 2).toUpperCase();
 }
 
-export default function ReceivedReviews() {
+export default function ReceivedReviews({ reviews, isLoading }: Props) {
+  if (isLoading) {
+    return (
+      <Section>
+        <SectionHeader>รีวิวที่ได้รับ</SectionHeader>
+        <LoadingText>กำลังโหลด...</LoadingText>
+      </Section>
+    );
+  }
+
   return (
     <Section>
-      <SectionHeader>รีวิวที่ได้รับ (127)</SectionHeader>
-      {MOCK_REVIEWS.map((review) => (
-        <ReviewCard key={review.id}>
-          <ReviewTop>
-            <Avatar>{getInitials(review.reviewer)}</Avatar>
-            <ReviewerInfo>
-              <ReviewerName>{review.reviewer}</ReviewerName>
-              <StarsRow>
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star key={s} $filled={review.score >= s}>
-                    {review.score >= s ? "★" : "☆"}
-                  </Star>
-                ))}
-              </StarsRow>
-            </ReviewerInfo>
-            <MetaRow>
-              <GameLabel>{review.game}</GameLabel>
-              <TimeAgo>{review.timeAgo}</TimeAgo>
-            </MetaRow>
-          </ReviewTop>
-          <CommentText>{review.comment}</CommentText>
-        </ReviewCard>
-      ))}
+      <SectionHeader>รีวิวที่ได้รับ ({reviews.length})</SectionHeader>
+
+      {reviews.length === 0 ? (
+        <Empty>ยังไม่มีรีวิว</Empty>
+      ) : (
+        reviews.map((review) => {
+          const raterName =
+            review.rater?.display_name ?? review.rater?.username ?? "ผู้ใช้";
+          return (
+            <ReviewCard key={review.id}>
+              <ReviewTop>
+                <Avatar>{getInitials(raterName)}</Avatar>
+                <ReviewerInfo>
+                  <ReviewerName>{raterName}</ReviewerName>
+                  <StarsRow>
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star key={s} $filled={review.score >= s}>
+                        {review.score >= s ? "★" : "☆"}
+                      </Star>
+                    ))}
+                  </StarsRow>
+                </ReviewerInfo>
+                <MetaRow>
+                  <TimeAgo>{formatTimeAgo(review.created_at)}</TimeAgo>
+                </MetaRow>
+              </ReviewTop>
+              {review.comment && (
+                <CommentText>{review.comment}</CommentText>
+              )}
+            </ReviewCard>
+          );
+        })
+      )}
     </Section>
   );
 }

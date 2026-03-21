@@ -157,16 +157,31 @@ export interface PendingItem {
 
 interface PendingListProps {
   initialPending: PendingItem[];
+  onApprove?: (id: string) => Promise<void>;
+  onReject?: (id: string) => Promise<void>;
 }
 
-export default function PendingList({ initialPending }: PendingListProps) {
+export default function PendingList({ initialPending, onApprove, onReject }: PendingListProps) {
   const [pending, setPending] = useState<PendingItem[]>(initialPending);
+  const [busy, setBusy] = useState<string | null>(null);
 
-  const handleApprove = (id: string) => {
+  const handleApprove = async (id: string) => {
+    setBusy(id);
+    try {
+      await onApprove?.(id);
+    } finally {
+      setBusy(null);
+    }
     setPending((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const handleReject = (id: string) => {
+  const handleReject = async (id: string) => {
+    setBusy(id);
+    try {
+      await onReject?.(id);
+    } finally {
+      setBusy(null);
+    }
     setPending((prev) => prev.filter((p) => p.id !== id));
   };
 
@@ -193,10 +208,16 @@ export default function PendingList({ initialPending }: PendingListProps) {
             <TimeAgo>{p.timeAgo}</TimeAgo>
 
             <ActionBtns>
-              <ApproveBtn onClick={() => handleApprove(p.id)}>
+              <ApproveBtn
+                onClick={() => handleApprove(p.id)}
+                disabled={busy === p.id}
+              >
                 ✅ Approve
               </ApproveBtn>
-              <RejectBtn onClick={() => handleReject(p.id)}>
+              <RejectBtn
+                onClick={() => handleReject(p.id)}
+                disabled={busy === p.id}
+              >
                 ❌ Reject
               </RejectBtn>
             </ActionBtns>

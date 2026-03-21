@@ -4,6 +4,7 @@
  * called from the NextAuth JWT callback so it runs on every sign-in.
  */
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import type { UserRow, UserInsert, UserUpdate } from "@/types/database"
 
 // ---------------------------------------------------------------------------
@@ -80,7 +81,9 @@ export async function getUserByDiscordId(discordId: string): Promise<UserRow | n
  * Returns the upserted row or null on failure (non-blocking – auth continues).
  */
 export async function upsertUser(profile: DiscordProfile): Promise<UserRow | null> {
-  const supabase = await createClient()
+  // Use admin client so upsert (INSERT + UPDATE on conflict) always succeeds
+  // regardless of RLS policies (anon key cannot update other users' rows).
+  const supabase = createAdminClient()
 
   const payload: UserInsert = {
     discord_id:    profile.id,

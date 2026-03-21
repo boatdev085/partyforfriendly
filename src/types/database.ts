@@ -338,12 +338,56 @@ export interface Database {
           updated_at?: string
         }
       }
+      messages: {
+        Row: {
+          id: string
+          party_id: string
+          user_id: string
+          content: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          party_id: string
+          user_id: string
+          content: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          party_id?: string
+          user_id?: string
+          content?: string
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      join_party_safe: {
+        Args: {
+          p_party_id: string
+          p_user_id: string
+        }
+        Returns: {
+          success?: boolean
+          member_count?: number
+          error?: string
+        }
+      }
+      leave_party_safe: {
+        Args: {
+          p_party_id: string
+          p_user_id: string
+        }
+        Returns: {
+          success?: boolean
+          promoted_user_id?: string | null
+          error?: string
+        }
+      }
     }
     Enums: {
       [_ in never]: never
@@ -370,3 +414,6 @@ export type UserBadgeRow      = Database['public']['Tables']['user_badges']['Row
 export type GameProfileRow    = Database['public']['Tables']['game_profiles']['Row']
 export type GameProfileInsert = Database['public']['Tables']['game_profiles']['Insert']
 export type GameProfileUpdate = Database['public']['Tables']['game_profiles']['Update']
+export type MessageRow     = Database['public']['Tables']['messages']['Row']
+export type MessageInsert  = Database['public']['Tables']['messages']['Insert']
+export type MessageUpdate  = Database['public']['Tables']['messages']['Update']

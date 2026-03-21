@@ -26,6 +26,13 @@ export interface PartyWithHost extends PartyRow {
     display_name: string | null
     avatar_url: string | null
   } | null
+  game?: {
+    id: string
+    name: string
+    slug: string
+    cover_url: string | null
+  } | null
+  member_count?: number
 }
 
 // ---------------------------------------------------------------------------
@@ -83,6 +90,9 @@ export async function getPartyById(id: string): Promise<PartyWithHost | null> {
       `*,
        host:users!parties_host_id_fkey (
          id, username, display_name, avatar_url
+       ),
+       game:games!parties_game_id_fkey (
+         id, name, slug, cover_url
        )`,
     )
     .eq("id", id)

@@ -1,19 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import styled from "styled-components";
 import { theme } from "@/styles/theme";
-import NotifItem, { type Notif } from "@/components/notifications/NotifItem";
+import toast from "react-hot-toast";
+import NotifItem, { type Notif, type NotifType } from "@/components/notifications/NotifItem";
 import AuthGuard from "@/components/auth/AuthGuard";
+import type { NotificationRow } from "@/types/database";
 
-const INITIAL_NOTIFS: Notif[] = [
-  { id:"n1", type:"join_request", username:"SomchaiXX", game:"ROV", timeAgo:"2 นาทีที่แล้ว", isNew:true },
-  { id:"n2", type:"waitlist_open", game:"PUBG", timeAgo:"5 นาทีที่แล้ว", isNew:true },
-  { id:"n3", type:"rated", username:"TomZaa", score:5, timeAgo:"10 นาทีที่แล้ว", isNew:true },
-  { id:"n4", type:"approved", game:"Valorant", timeAgo:"1 ชั่วโมงที่แล้ว", isNew:false },
-  { id:"n5", type:"party_full", timeAgo:"เมื่อวาน", isNew:false },
-  { id:"n6", type:"badge_earned", timeAgo:"2 วันที่แล้ว", isNew:false },
-];
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatTimeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "เมื่อกี้";
+  if (min < 60) return `${min} นาทีที่แล้ว`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} ชั่วโมงที่แล้ว`;
+  const days = Math.floor(hr / 24);
+  if (days === 1) return "เมื่อวาน";
+  if (days < 7) return `${days} วันที่แล้ว`;
+  return `${Math.floor(days / 7)} สัปดาห์ที่แล้ว`;
+}
+
+function rowToNotif(row: NotificationRow): Notif {
+  const data = (row.data ?? {}) as Record<string, unknown>;
+  return {
+    id: row.id,
+    type: row.type as NotifType,
+    username: (data.username as string | undefined),
+    game: (data.game as string | undefined),
+    score: (data.score as number | undefined),
+    partyId: (data.partyId as string | undefined),
+    requestId: (data.requestId as string | undefined),
+    timeAgo: formatTimeAgo(row.created_at),
+    isNew: !row.is_read,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Styled components
+// ---------------------------------------------------------------------------
 
 const Page = styled.main`
   max-width: 640px;
@@ -54,6 +84,7 @@ const MarkAllBtn = styled.button`
   font-family: inherit;
   transition: all 0.15s;
   &:hover { border-color: ${theme.colors.borderLight}; color: ${theme.colors.text}; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
 `;
 
 const Section = styled.div`
@@ -83,54 +114,142 @@ const Empty = styled.div`
   color: ${theme.colors.textDim};
 `;
 
-export default function NotificationsPage() {
-  const [notifs, setNotifs] = useState<Notif[]>(INITIAL_NOTIFS);
+const LoadingRow = styled.div`
+  padding: 32px;
+  text-align: center;
+  font-size: 13px;
+  color: ${theme.colors.textMuted};
+`;
 
-  const remove = (id: string) => setNotifs(prev => prev.filter(n => n.id !== id));
-  const markAllRead = () => setNotifs(prev => prev.map(n => ({ ...n, isNew: false })));
+// ---------------------------------------------------------------------------
+// Page component
+// ---------------------------------------------------------------------------
+
+export default function NotificationsPage() {
+  const { data: session } = useSession();
+  const [notifs, setNotifs] = useState<Notif[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch notifications on mount
+  const fetchNotifs = useCallback(async () => {
+    if (!session?.user) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/notifications");
+      if (!res.ok) throw new Error("fetch failed");
+      const json = await res.json() as { notifications: NotificationRow[] };
+      setNotifs(json.notifications.map(rowToNotif));
+    } catch {
+      toast.error("ไม่สามารถโหลดการแจ้งเตือนได้");
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.user]);
+
+  useEffect(() => {
+    void fetchNotifs();
+  }, [fetchNotifs]);
+
+  // Mark single notification as read
+  const markRead = useCallback(async (id: string) => {
+    setNotifs(prev => prev.map(n => n.id === id ? { ...n, isNew: false } : n));
+    await fetch(`/api/notifications/${id}/read`, { method: "PATCH" });
+  }, []);
+
+  // Mark all as read
+  const markAllRead = useCallback(async () => {
+    setNotifs(prev => prev.map(n => ({ ...n, isNew: false })));
+    await fetch("/api/notifications", { method: "PATCH" });
+  }, []);
+
+  // Approve join request
+  const handleApprove = useCallback(async (notifId: string) => {
+    const notif = notifs.find(n => n.id === notifId);
+    if (!notif?.partyId || !notif?.requestId) return;
+    try {
+      const res = await fetch(
+        `/api/parties/${notif.partyId}/requests/${notif.requestId}`,
+        { method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "approve" }) },
+      );
+      if (!res.ok) throw new Error();
+      toast.success("Approved ✅");
+      await markRead(notifId);
+      setNotifs(prev => prev.filter(n => n.id !== notifId));
+    } catch {
+      toast.error("เกิดข้อผิดพลาด");
+    }
+  }, [notifs, markRead]);
+
+  // Reject join request
+  const handleReject = useCallback(async (notifId: string) => {
+    const notif = notifs.find(n => n.id === notifId);
+    if (!notif?.partyId || !notif?.requestId) return;
+    try {
+      const res = await fetch(
+        `/api/parties/${notif.partyId}/requests/${notif.requestId}`,
+        { method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "reject" }) },
+      );
+      if (!res.ok) throw new Error();
+      toast.success("Rejected ❌");
+      await markRead(notifId);
+      setNotifs(prev => prev.filter(n => n.id !== notifId));
+    } catch {
+      toast.error("เกิดข้อผิดพลาด");
+    }
+  }, [notifs, markRead]);
 
   const newNotifs = notifs.filter(n => n.isNew);
   const oldNotifs = notifs.filter(n => !n.isNew);
-  const newCount = newNotifs.length;
 
   return (
     <AuthGuard>
     <Page>
       <Header>
         <Title>แจ้งเตือน</Title>
-        <MarkAllBtn onClick={markAllRead}>อ่านทั้งหมด</MarkAllBtn>
+        <MarkAllBtn onClick={markAllRead} disabled={loading || notifs.every(n => !n.isNew)}>
+          อ่านทั้งหมด
+        </MarkAllBtn>
       </Header>
 
-      <Section>
-        <SectionLabel>ใหม่ {newCount > 0 ? `(${newCount})` : ""}</SectionLabel>
-        <Card>
-          {newNotifs.length === 0 ? (
-            <Empty>ไม่มีการแจ้งเตือนใหม่</Empty>
-          ) : (
-            newNotifs.map(n => (
-              <NotifItem
-                key={n.id}
-                notif={n}
-                onApprove={remove}
-                onReject={remove}
-              />
-            ))
-          )}
-        </Card>
-      </Section>
+      {loading ? (
+        <Card><LoadingRow>กำลังโหลด...</LoadingRow></Card>
+      ) : (
+        <>
+          <Section>
+            <SectionLabel>ใหม่ {newNotifs.length > 0 ? `(${newNotifs.length})` : ""}</SectionLabel>
+            <Card>
+              {newNotifs.length === 0 ? (
+                <Empty>ไม่มีการแจ้งเตือนใหม่</Empty>
+              ) : (
+                newNotifs.map(n => (
+                  <NotifItem
+                    key={n.id}
+                    notif={n}
+                    onApprove={handleApprove}
+                    onReject={handleReject}
+                    onClick={markRead}
+                  />
+                ))
+              )}
+            </Card>
+          </Section>
 
-      <Section>
-        <SectionLabel>ก่อนหน้า</SectionLabel>
-        <Card>
-          {oldNotifs.length === 0 ? (
-            <Empty>ไม่มีการแจ้งเตือนก่อนหน้า</Empty>
-          ) : (
-            oldNotifs.map(n => (
-              <NotifItem key={n.id} notif={n} />
-            ))
-          )}
-        </Card>
-      </Section>
+          <Section>
+            <SectionLabel>ก่อนหน้า</SectionLabel>
+            <Card>
+              {oldNotifs.length === 0 ? (
+                <Empty>ไม่มีการแจ้งเตือนก่อนหน้า</Empty>
+              ) : (
+                oldNotifs.map(n => (
+                  <NotifItem key={n.id} notif={n} onClick={markRead} />
+                ))
+              )}
+            </Card>
+          </Section>
+        </>
+      )}
     </Page>
     </AuthGuard>
   );

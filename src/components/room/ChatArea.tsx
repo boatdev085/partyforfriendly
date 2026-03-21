@@ -15,7 +15,8 @@ export interface ChatMessage {
 }
 
 interface Props {
-  initialMessages: ChatMessage[];
+  messages: ChatMessage[];
+  onSendMessage: (text: string) => Promise<void>;
   currentUserId: string;
 }
 
@@ -159,7 +160,7 @@ const Input = styled.input`
   }
 `;
 
-const SendBtn = styled.button`
+const SendBtn = styled.button<{ $sending: boolean }>`
   padding: 10px 16px;
   border-radius: ${theme.radii.md};
   background: ${theme.colors.primary};
@@ -167,11 +168,12 @@ const SendBtn = styled.button`
   font-size: 13px;
   font-weight: 700;
   border: none;
-  cursor: pointer;
+  cursor: ${({ $sending }) => ($sending ? "not-allowed" : "pointer")};
+  opacity: ${({ $sending }) => ($sending ? 0.6 : 1)};
   transition: opacity 0.15s;
   white-space: nowrap;
 
-  &:hover {
+  &:hover:not(:disabled) {
     opacity: 0.85;
   }
 `;
@@ -188,31 +190,26 @@ function getInitials(username: string) {
   return username.slice(0, 2).toUpperCase();
 }
 
-export default function ChatArea({ initialMessages, currentUserId }: Props) {
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+export default function ChatArea({ messages, onSendMessage, currentUserId }: Props) {
   const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // Auto-scroll when new messages arrive
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  function sendMessage() {
+  async function handleSend() {
     const text = input.trim();
-    if (!text) return;
-    const newMsg: ChatMessage = {
-      id: Date.now().toString(),
-      userId: currentUserId,
-      username: "คุณ",
-      text,
-      time: new Date().toLocaleTimeString("th-TH", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      isSelf: true,
-    };
-    setMessages((prev) => [...prev, newMsg]);
+    if (!text || sending) return;
+    setSending(true);
     setInput("");
+    try {
+      await onSendMessage(text);
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -222,7 +219,7 @@ export default function ChatArea({ initialMessages, currentUserId }: Props) {
       </Top>
 
       <MessagesArea>
-        <SystemMsg>🤖 Bot synced #rov-party</SystemMsg>
+        <SystemMsg>💬 ยินดีต้อนรับสู่ห้อง Party!</SystemMsg>
         {messages.map((msg) => (
           <BubbleRow key={msg.id} $isSelf={msg.isSelf}>
             <AvatarCircle $color={colorForUser(msg.userId)}>
@@ -245,11 +242,17 @@ export default function ChatArea({ initialMessages, currentUserId }: Props) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") sendMessage();
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              void handleSend();
+            }
           }}
-          placeholder="พิมพ์ข้อความ... (ส่งไป Discord อัตโนมัติ)"
+          placeholder="พิมพ์ข้อความ... (Enter เพื่อส่ง)"
+          disabled={sending}
         />
-        <SendBtn onClick={sendMessage}>ส่ง</SendBtn>
+        <SendBtn $sending={sending} onClick={() => void handleSend()} disabled={sending}>
+          {sending ? "..." : "ส่ง"}
+        </SendBtn>
       </InputRow>
     </Wrapper>
   );

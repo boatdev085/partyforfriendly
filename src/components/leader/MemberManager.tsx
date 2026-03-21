@@ -127,15 +127,22 @@ export interface MemberItem {
 
 interface MemberManagerProps {
   initialMembers: MemberItem[];
+  onKick?: (id: string) => Promise<void>;
 }
 
-export default function MemberManager({ initialMembers }: MemberManagerProps) {
+export default function MemberManager({ initialMembers, onKick }: MemberManagerProps) {
   const [members, setMembers] = useState<MemberItem[]>(initialMembers);
+  const [busy, setBusy] = useState<string | null>(null);
 
-  const handleKick = (id: string, username: string) => {
-    if (window.confirm(`Kick ${username} ออกจาก Party?`)) {
-      setMembers((prev) => prev.filter((m) => m.id !== id));
+  const handleKick = async (id: string, username: string) => {
+    if (!window.confirm(`Kick ${username} ออกจาก Party?`)) return;
+    setBusy(id);
+    try {
+      await onKick?.(id);
+    } finally {
+      setBusy(null);
     }
+    setMembers((prev) => prev.filter((m) => m.id !== id));
   };
 
   return (
@@ -157,8 +164,11 @@ export default function MemberManager({ initialMembers }: MemberManagerProps) {
           </MemberInfo>
 
           {!m.isLeader && !m.isSelf && (
-            <KickBtn onClick={() => handleKick(m.id, m.username)}>
-              Kick
+            <KickBtn
+              onClick={() => handleKick(m.id, m.username)}
+              disabled={busy === m.id}
+            >
+              {busy === m.id ? "…" : "Kick"}
             </KickBtn>
           )}
         </MemberRow>

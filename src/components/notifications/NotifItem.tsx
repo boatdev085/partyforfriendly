@@ -20,12 +20,16 @@ export interface Notif {
   score?: number;
   timeAgo: string;
   isNew: boolean;
+  /** For join_request: the party to approve/reject against */
+  partyId?: string;
+  requestId?: string;
 }
 
 interface Props {
   notif: Notif;
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
+  onClick?: (id: string) => void;
 }
 
 const Row = styled.div<{ $isNew: boolean }>`
@@ -38,7 +42,10 @@ const Row = styled.div<{ $isNew: boolean }>`
     $isNew ? "rgba(124,106,255,0.06)" : "transparent"};
   border-radius: 8px;
   padding: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
   &:last-child { border-bottom: none; }
+  &:hover { background: ${theme.colors.bgHover}; }
 `;
 
 const IconCircle = styled.div<{ color?: string }>`
@@ -124,8 +131,12 @@ const Stars = ({ score }: { score: number }) => (
   </span>
 );
 
-export default function NotifItem({ notif, onApprove, onReject }: Props) {
+export default function NotifItem({ notif, onApprove, onReject, onClick }: Props) {
   const router = useRouter();
+
+  const handleRowClick = () => {
+    onClick?.(notif.id);
+  };
 
   const renderContent = () => {
     switch (notif.type) {
@@ -138,8 +149,18 @@ export default function NotifItem({ notif, onApprove, onReject }: Props) {
                 <strong>{notif.username}</strong> ขอ join party · {notif.game}
               </Text>
               <Actions>
-                <Btn $variant="green" onClick={() => onApprove?.(notif.id)}>✅ Approve</Btn>
-                <Btn $variant="red" onClick={() => onReject?.(notif.id)}>❌ Reject</Btn>
+                <Btn
+                  $variant="green"
+                  onClick={(e) => { e.stopPropagation(); onApprove?.(notif.id); }}
+                >
+                  ✅ Approve
+                </Btn>
+                <Btn
+                  $variant="red"
+                  onClick={(e) => { e.stopPropagation(); onReject?.(notif.id); }}
+                >
+                  ❌ Reject
+                </Btn>
               </Actions>
             </Content>
           </>
@@ -152,7 +173,9 @@ export default function NotifItem({ notif, onApprove, onReject }: Props) {
               <Text>Party Waitlist เปิดแล้ว! · {notif.game}</Text>
               <Sub>มีที่ว่าง 1 คน</Sub>
               <Actions>
-                <Btn $variant="primary" onClick={() => router.push("/parties")}>⚡ Join ตอนนี้</Btn>
+                <Btn $variant="primary" onClick={(e) => { e.stopPropagation(); router.push("/parties"); }}>
+                  ⚡ Join ตอนนี้
+                </Btn>
               </Actions>
             </Content>
           </>
@@ -197,11 +220,20 @@ export default function NotifItem({ notif, onApprove, onReject }: Props) {
             </Content>
           </>
         );
+      default:
+        return (
+          <>
+            <IconCircle color="rgba(124,106,255,0.15)">🔔</IconCircle>
+            <Content>
+              <Text>{(notif as Notif & { message?: string }).message ?? "แจ้งเตือนใหม่"}</Text>
+            </Content>
+          </>
+        );
     }
   };
 
   return (
-    <Row $isNew={notif.isNew}>
+    <Row $isNew={notif.isNew} onClick={handleRowClick}>
       {renderContent()}
       <Time>{notif.timeAgo}</Time>
     </Row>
