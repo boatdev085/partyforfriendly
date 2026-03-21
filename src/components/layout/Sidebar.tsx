@@ -21,31 +21,18 @@ interface NavSection {
   items: NavItemData[];
 }
 
-const navSections: NavSection[] = [
-  {
-    label: "MAIN",
-    items: [
-      { icon: "🏠", labelKey: "nav_home", href: "/" },
-      { icon: "📋", labelKey: "nav_list", href: "/parties" },
-      { icon: "🔍", labelKey: "nav_search", href: "/search" },
-      { icon: "➕", labelKey: "nav_create", href: "/parties/create" },
-    ],
-  },
-  {
-    label: "MY PARTY",
-    items: [
-      { icon: "🎮", labelKey: "nav_room", href: "/parties/1" },
-      { icon: "⚙️", labelKey: "nav_leader", href: "/parties/1/manage" },
-    ],
-  },
-  {
-    label: "ACCOUNT",
-    items: [
-      { icon: "👤", labelKey: "nav_profile", href: "/profile/1" },
-      { icon: "⭐", labelKey: "nav_rating", href: "/reviews" },
-      { icon: "🔔", labelKey: "nav_notif", href: "/notifications", badge: "3" },
-    ],
-  },
+const DEV_USER_ID = "6141de95-a2b7-4675-914e-92cdbd734296";
+
+const mainNavItems: NavItemData[] = [
+  { icon: "🏠", labelKey: "nav_home", href: "/" },
+  { icon: "📋", labelKey: "nav_list", href: "/parties" },
+  { icon: "🔍", labelKey: "nav_search", href: "/search" },
+  { icon: "➕", labelKey: "nav_create", href: "/parties/create" },
+];
+
+const accountNavItems: NavItemData[] = [
+  { icon: "⭐", labelKey: "nav_rating", href: "/reviews" },
+  { icon: "🔔", labelKey: "nav_notif", href: "/notifications" },
 ];
 
 const Overlay = styled.div<{ $open: boolean }>`
@@ -283,6 +270,25 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
   const userName = (session?.user as any)?.discordUsername || session?.user?.name || "Guest";
   const userImage = session?.user?.image;
+
+  // Profile link: use real session ID, fallback to DEV_USER_ID in dev mode
+  const isDev = process.env.NODE_ENV === "development";
+  const profileId = (session?.user as any)?.id ?? (isDev ? DEV_USER_ID : null);
+  const profileHref = profileId ? `/profile/${profileId}` : "/login";
+
+  const navSections = [
+    {
+      label: "MAIN",
+      items: mainNavItems,
+    },
+    {
+      label: "ACCOUNT",
+      items: [
+        { icon: "👤", labelKey: "nav_profile", href: profileHref },
+        ...accountNavItems,
+      ],
+    },
+  ];
   const initials = userName.slice(0, 2).toUpperCase();
 
   return (
