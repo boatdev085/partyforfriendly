@@ -122,7 +122,7 @@ export interface MemberItem {
   isLeader: boolean;
   isSelf?: boolean;
   rating: number;
-  partyCount: number;
+  partyCount?: number;
 }
 
 interface MemberManagerProps {
@@ -159,7 +159,7 @@ export default function MemberManager({ initialMembers, onKick }: MemberManagerP
               {m.isLeader && <LeaderBadge>👑</LeaderBadge>}
             </NameRow>
             <SubInfo>
-              ⭐ {m.rating.toFixed(1)} &nbsp;·&nbsp; {m.partyCount} parties
+              ⭐ {m.rating.toFixed(1)}{m.partyCount != null ? ` · ${m.partyCount} parties` : ""}
             </SubInfo>
           </MemberInfo>
 

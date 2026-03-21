@@ -9,6 +9,7 @@ import { theme } from "@/styles/theme";
 import ChatArea, { ChatMessage } from "@/components/room/ChatArea";
 import MembersList, { Member } from "@/components/room/MembersList";
 import PartyInfoCard from "@/components/room/PartyInfoCard";
+import MemberManager, { MemberItem } from "@/components/leader/MemberManager";
 import AuthGuard from "@/components/auth/AuthGuard";
 import { usePartyRealtime, MemberWithUser } from "@/hooks/usePartyRealtime";
 import type { MessageRow } from "@/types/database";
@@ -351,7 +352,7 @@ function PartyRoomContent({
 }: RoomContentProps) {
   const router = useRouter();
 
-  const { members, messages } = usePartyRealtime(
+  const { members, messages, refreshMembers } = usePartyRealtime(
     party.id,
     initialMembers,
     initialMessages,
@@ -410,8 +411,12 @@ function PartyRoomContent({
     const res = await fetch(`/api/parties/${party.id}/join`, { method: "POST" });
     const json = await res.json() as { status?: string; error?: string };
     if (res.ok) {
-      if (json.status === "joined") toast.success("เข้าร่วม Party แล้ว! 🎮");
-      else if (json.status === "pending") toast.success("ส่งคำขอแล้ว รอ Host อนุมัติ");
+      if (json.status === "joined") {
+        toast.success("เข้าร่วม Party แล้ว! 🎮");
+        await refreshMembers();
+      } else if (json.status === "pending") {
+        toast.success("ส่งคำขอแล้ว รอ Host อนุมัติ");
+      }
     } else {
       const errMap: Record<string, string> = {
         party_full: "Party เต็มแล้ว",
@@ -422,7 +427,22 @@ function PartyRoomContent({
       };
       toast.error(errMap[json.error ?? ""] ?? "เข้าร่วมไม่สำเร็จ");
     }
-  }, [party.id]);
+  }, [party.id, refreshMembers]);
+
+  // Kick member (host only)
+  const handleKick = useCallback(async (userId: string) => {
+    const res = await fetch(`/api/parties/${party.id}/kick`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    if (res.ok) {
+      toast.success("Kick สำเร็จ");
+      await refreshMembers();
+    } else {
+      toast.error("Kick ไม่สำเร็จ");
+    }
+  }, [party.id, refreshMembers]);
 
   // Leave party
   const handleLeave = useCallback(async () => {
@@ -435,10 +455,23 @@ function PartyRoomContent({
     }
   }, [party.id, router]);
 
-  const isMember = members.some((m) => m.user_id === currentUserId && m.status === "approved");
-  const isHost = party.host_id === currentUserId;
+  const userKnown = currentUserId !== "";
+  const isMember = userKnown && members.some((m) => m.user_id === currentUserId && m.status === "approved");
+  const isHost = userKnown && party.host_id === currentUserId;
   const gameName = party.game?.name ?? party.game_id?.slice(0, 8) ?? "Unknown";
   const memberCount = party.member_count;
+
+  // Data for host management panel
+  const managerMembers: MemberItem[] = members
+    .filter((m) => m.status === "approved")
+    .map((m) => ({
+      id: m.user_id,
+      username: m.user?.display_name ?? m.user?.username ?? `User${m.user_id.slice(0, 6)}`,
+      isLeader: m.role === "host" || m.user_id === party.host_id,
+      isSelf: m.user_id === currentUserId,
+      rating: m.average_rating ?? 0,
+      partyCount: 0,
+    }));
 
   return (
     <Page>
@@ -447,15 +480,15 @@ function PartyRoomContent({
         {party.status === "open" && <OpenBadge>OPEN</OpenBadge>}
         <GameTag>{gameName.toUpperCase()}</GameTag>
         <SlotCount>{memberCount}/{party.max_members}</SlotCount>
-        {!isMember && !isHost && party.status === "open" && (
+        {userKnown && !isMember && !isHost && party.status === "open" && (
           <JoinBtn onClick={handleJoin}>🎮 เข้าร่วม</JoinBtn>
         )}
-        {isMember && (
+        {userKnown && isMember && (
           <RateBtn onClick={() => router.push(`/reviews?partyId=${party.id}`)}>
             ⭐ ให้คะแนน
           </RateBtn>
         )}
-        {(isMember || isHost) && (
+        {userKnown && (isMember || isHost) && (
           <LeaveBtn onClick={handleLeave}>🚪 ออก Party</LeaveBtn>
         )}
       </Topbar>
@@ -485,6 +518,13 @@ function PartyRoomContent({
             <SectionTitle>สมาชิก ({displayMembers.length}/{party.max_members})</SectionTitle>
             <MembersList members={displayMembers} maxMembers={party.max_members} partyStatus={party.status} />
           </SideSection>
+
+          {isHost && (
+            <SideSection>
+              <SectionTitle>จัดการห้อง</SectionTitle>
+              <MemberManager initialMembers={managerMembers} onKick={handleKick} />
+            </SideSection>
+          )}
 
           <AdDiv>📢 พื้นที่โฆษณา</AdDiv>
         </Sidebar>
