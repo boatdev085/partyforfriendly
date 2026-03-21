@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import styled from "styled-components";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import styled, { keyframes } from "styled-components";
 import { theme } from "@/styles/theme";
 import { Users, Globe, Crown } from "lucide-react";
 import type { Party } from "@/types";
@@ -9,6 +11,11 @@ import type { Party } from "@/types";
 interface Props {
   party: Party;
 }
+
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+`;
 
 const Card = styled.div`
   display: block;
@@ -162,7 +169,7 @@ const ActionBtn = styled.button<{ $variant: "green" | "purple" | "gray" }>`
   border-radius: ${theme.radii.md};
   font-size: 13px;
   font-weight: 700;
-  cursor: pointer;
+  cursor: ${({ $variant }) => ($variant === "gray" ? "not-allowed" : "pointer")};
   transition: all 0.15s;
   border: ${({ $variant }) =>
     $variant === "green"
@@ -178,10 +185,45 @@ const ActionBtn = styled.button<{ $variant: "green" | "purple" | "gray" }>`
       : $variant === "purple"
       ? theme.colors.primary
       : theme.colors.textMuted};
+  opacity: ${({ $variant }) => ($variant === "gray" ? 0.6 : 1)};
 
-  &:hover {
+  &:hover:not(:disabled) {
     opacity: 0.85;
   }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+`;
+
+const InlineFeedback = styled.div<{ $type: "success" | "info" | "error" }>`
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: ${theme.radii.sm};
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  animation: ${fadeIn} 0.2s ease;
+  background: ${({ $type }) =>
+    $type === "success"
+      ? "rgba(34,197,94,0.12)"
+      : $type === "info"
+      ? "rgba(124,106,255,0.12)"
+      : "rgba(239,68,68,0.12)"};
+  color: ${({ $type }) =>
+    $type === "success"
+      ? theme.colors.success
+      : $type === "info"
+      ? theme.colors.primary
+      : theme.colors.danger};
+  border: 1px solid
+    ${({ $type }) =>
+      $type === "success"
+        ? "rgba(34,197,94,0.25)"
+        : $type === "info"
+        ? theme.colors.primaryGlow
+        : "rgba(239,68,68,0.25)"};
 `;
 
 const langLabel: Record<string, string> = {
@@ -190,31 +232,96 @@ const langLabel: Record<string, string> = {
   both: "ไทย/EN",
 };
 
+type JoinState = "idle" | "joining" | "joined" | "requested" | "error";
+
 export default function PartyCard({ party }: Props) {
+  const router = useRouter();
   const isFull = party.current_members >= party.max_members || party.status === "full";
   const effectiveStatus = isFull ? "full" : party.status;
   const hasPending = (party.pending_count ?? 0) > 0 && party.join_mode === "approve";
 
+  const [joinState, setJoinState] = useState<JoinState>("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  async function handleJoin(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (joinState === "joining") return;
+
+    setJoinState("joining");
+    setErrorMsg("");
+
+    try {
+      const res = await fetch(`/api/parties/${party.id}/join`, { method: "POST" });
+      const json = await res.json();
+
+      if (res.ok) {
+        if (json.status === "joined") {
+          setJoinState("joined");
+          setTimeout(() => router.push(`/parties/${party.id}`), 800);
+        } else if (json.status === "pending") {
+          setJoinState("requested");
+        } else {
+          setJoinState("joined");
+          setTimeout(() => router.push(`/parties/${party.id}`), 800);
+        }
+      } else {
+        const msg =
+          json.error === "party_full"
+            ? "ปาร์ตี้เต็มแล้ว"
+            : json.error === "already_member"
+            ? "คุณเป็นสมาชิกอยู่แล้ว"
+            : json.error === "request_pending"
+            ? "คำขอรอการอนุมัติอยู่แล้ว"
+            : json.error === "host_cannot_join"
+            ? "คุณเป็นเจ้าของปาร์ตี้นี้"
+            : "เกิดข้อผิดพลาด กรุณาลองใหม่";
+        setErrorMsg(msg);
+        setJoinState("error");
+      }
+    } catch {
+      setErrorMsg("เกิดข้อผิดพลาด กรุณาลองใหม่");
+      setJoinState("error");
+    }
+  }
+
   let actionBtn: React.ReactNode = null;
   if (effectiveStatus === "full") {
     actionBtn = (
-      <ActionBtn $variant="gray" onClick={(e) => e.preventDefault()}>
-        🔔 NOTIFY ME WHEN OPEN
+      <ActionBtn $variant="gray" disabled>
+        เต็มแล้ว
       </ActionBtn>
     );
   } else if (effectiveStatus === "open" && party.join_mode === "auto") {
     actionBtn = (
-      <ActionBtn $variant="green" onClick={(e) => e.preventDefault()}>
-        ⚡ JOIN PARTY
+      <ActionBtn
+        $variant="green"
+        onClick={handleJoin}
+        disabled={joinState === "joining" || joinState === "joined"}
+      >
+        {joinState === "joining" ? "กำลังเข้าร่วม…" : "⚡ เข้าร่วม"}
       </ActionBtn>
     );
   } else if (effectiveStatus === "open" && party.join_mode === "approve") {
     actionBtn = (
-      <ActionBtn $variant="purple" onClick={(e) => e.preventDefault()}>
-        📨 REQUEST TO JOIN
+      <ActionBtn
+        $variant="purple"
+        onClick={handleJoin}
+        disabled={joinState === "joining" || joinState === "requested"}
+      >
+        {joinState === "joining" ? "กำลังส่งคำขอ…" : "📨 ขอเข้าร่วม"}
       </ActionBtn>
     );
   }
+
+  const feedback =
+    joinState === "joined" ? (
+      <InlineFeedback $type="success">เข้าร่วมสำเร็จ! กำลังพาไปห้อง…</InlineFeedback>
+    ) : joinState === "requested" ? (
+      <InlineFeedback $type="info">ส่งคำขอแล้ว รอการอนุมัติจากเจ้าของ</InlineFeedback>
+    ) : joinState === "error" ? (
+      <InlineFeedback $type="error">{errorMsg}</InlineFeedback>
+    ) : null;
 
   return (
     <Card>
@@ -282,6 +389,7 @@ export default function PartyCard({ party }: Props) {
       </CardLink>
 
       {actionBtn}
+      {feedback}
     </Card>
   );
 }

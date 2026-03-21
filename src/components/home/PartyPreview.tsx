@@ -1,76 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import styled from "styled-components";
+import { useEffect, useState } from "react";
+import styled, { keyframes } from "styled-components";
 import { theme } from "@/styles/theme";
 import { ArrowRight, TrendingUp } from "lucide-react";
 import PartyCard from "@/components/party/PartyCard";
 import type { Party } from "@/types";
 
-const MOCK_PARTIES: (Party & { game_name: string; host_name: string })[] = [
-  {
-    id: "1",
-    title: "หา DPS มือดี ไป Mythic+ 15+",
-    game: "world-of-warcraft",
-    game_name: "World of Warcraft",
-    host_id: "u1",
-    host_name: "Shadowblade",
-    max_members: 5,
-    current_members: 3,
-    status: "open",
-    description: "ต้องการ DPS gear score 450+ รู้จัก rotation ของ class ตัวเอง ไม่ toxic",
-    required_rank: "450+ GS",
-    language: "th",
-    join_mode: "approve",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    title: "Valorant ขึ้น Diamond ด้วยกัน",
-    game: "valorant",
-    game_name: "Valorant",
-    host_id: "u2",
-    host_name: "NightFox",
-    max_members: 5,
-    current_members: 5,
-    status: "full",
-    description: "ปาร์ตี้ ranked เน้น communication และ IGL ที่ดี มีไมค์บังคับ",
-    required_rank: "Platinum+",
-    language: "th",
-    join_mode: "approve",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "3",
-    title: "Minecraft Survival ยาว ๆ สร้างเซิร์ฟใหม่",
-    game: "minecraft",
-    game_name: "Minecraft",
-    host_id: "u3",
-    host_name: "CrafterZaa",
-    max_members: 8,
-    current_members: 2,
-    status: "open",
-    description: "เล่น survival กัน ไม่เร่ง ชิล ๆ มีออก stream ด้วย",
-    language: "both",
-    join_mode: "auto",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "4",
-    title: "FFXIV Savage Raid P8S สอนนะ",
-    game: "final-fantasy-xiv",
-    game_name: "Final Fantasy XIV",
-    host_id: "u4",
-    host_name: "AetherWing",
-    max_members: 8,
-    current_members: 6,
-    status: "open",
-    description: "Static ใหม่สำหรับคนอยากเรียน Savage ไม่ต้องมีประสบการณ์ก็ได้",
-    language: "th",
-    join_mode: "auto",
-    created_at: new Date().toISOString(),
-  },
-];
+const pulse = keyframes`
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+`;
 
 const Section = styled.section`
   max-width: 1200px;
@@ -137,7 +78,64 @@ const Grid = styled.div`
   }
 `;
 
+const SkeletonCard = styled.div`
+  background: ${theme.colors.bgCard};
+  border: 1px solid ${theme.colors.border};
+  border-radius: ${theme.radii.lg};
+  padding: 20px;
+  animation: ${pulse} 1.5s ease-in-out infinite;
+`;
+
+const SkeletonLine = styled.div<{ $width?: string; $height?: string }>`
+  background: ${theme.colors.bgHover};
+  border-radius: ${theme.radii.sm};
+  height: ${({ $height }) => $height ?? "12px"};
+  width: ${({ $width }) => $width ?? "100%"};
+  margin-bottom: 10px;
+`;
+
+const EmptyState = styled.div`
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 48px 24px;
+  color: ${theme.colors.textMuted};
+  font-size: 15px;
+`;
+
+function LoadingSkeleton() {
+  return (
+    <SkeletonCard>
+      <SkeletonLine $width="40%" $height="14px" />
+      <SkeletonLine $width="80%" $height="16px" />
+      <SkeletonLine $width="100%" />
+      <SkeletonLine $width="70%" />
+      <SkeletonLine $width="50%" $height="14px" />
+    </SkeletonCard>
+  );
+}
+
 export default function PartyPreview() {
+  const [parties, setParties] = useState<Party[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/parties?status=open")
+      .then((r) => {
+        if (!r.ok) throw new Error("fetch failed");
+        return r.json();
+      })
+      .then((json) => {
+        const data: Party[] = Array.isArray(json.data) ? json.data.slice(0, 4) : [];
+        setParties(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError(true);
+        setLoading(false);
+      });
+  }, []);
+
   return (
     <Section>
       <Header>
@@ -153,9 +151,20 @@ export default function PartyPreview() {
       </Header>
 
       <Grid>
-        {MOCK_PARTIES.map((party) => (
-          <PartyCard key={party.id} party={party} />
-        ))}
+        {loading ? (
+          <>
+            <LoadingSkeleton />
+            <LoadingSkeleton />
+            <LoadingSkeleton />
+            <LoadingSkeleton />
+          </>
+        ) : error || parties.length === 0 ? (
+          <EmptyState>ยังไม่มีปาร์ตี้ที่เปิดรับ</EmptyState>
+        ) : (
+          parties.map((party) => (
+            <PartyCard key={party.id} party={party} />
+          ))
+        )}
       </Grid>
     </Section>
   );

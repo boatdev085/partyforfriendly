@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import styled, { keyframes } from "styled-components";
 import { theme } from "@/styles/theme";
-import { Search, ArrowRight, Users, Zap } from "lucide-react";
+import { Search, ArrowRight, Users, Zap, Plus } from "lucide-react";
 
 const float = keyframes`
   0%, 100% { transform: translateY(0px); }
@@ -183,6 +185,29 @@ const Divider = styled.div`
 `;
 
 export default function Hero() {
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
+
+  const [partyCount, setPartyCount] = useState<number | null>(null);
+  const [gameCount, setGameCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/parties?status=open")
+      .then((r) => r.json())
+      .then((json) => {
+        if (typeof json.total === "number") setPartyCount(json.total);
+        else if (Array.isArray(json.data)) setPartyCount(json.data.length);
+      })
+      .catch(() => {/* keep null */});
+
+    fetch("/api/games")
+      .then((r) => r.json())
+      .then((json) => {
+        if (Array.isArray(json)) setGameCount(json.length);
+      })
+      .catch(() => {/* keep null */});
+  }, []);
+
   return (
     <Section>
       <Badge>
@@ -205,10 +230,18 @@ export default function Hero() {
           <Search size={16} />
           หาปาร์ตี้เลย
         </BtnPrimary>
-        <BtnSecondary href="/login">
-          เข้าสู่ระบบด้วย Discord
-          <ArrowRight size={16} />
-        </BtnSecondary>
+
+        {isLoggedIn ? (
+          <BtnSecondary href="/parties/create">
+            <Plus size={16} />
+            สร้างปาร์ตี้
+          </BtnSecondary>
+        ) : (
+          <BtnSecondary href="/search">
+            สำรวจเกม
+            <ArrowRight size={16} />
+          </BtnSecondary>
+        )}
       </Buttons>
 
       <Stats>
@@ -218,12 +251,12 @@ export default function Hero() {
         </Stat>
         <Divider />
         <Stat>
-          <strong>180+</strong>
+          <strong>{partyCount !== null ? `${partyCount}` : "—"}</strong>
           <span>ปาร์ตี้ที่เปิดอยู่</span>
         </Stat>
         <Divider />
         <Stat>
-          <strong>30+</strong>
+          <strong>{gameCount !== null ? `${gameCount}` : "—"}</strong>
           <span>เกมที่รองรับ</span>
         </Stat>
       </Stats>
