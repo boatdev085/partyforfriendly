@@ -455,7 +455,7 @@ function PartyRoomContent({
             ⭐ ให้คะแนน
           </RateBtn>
         )}
-        {(isMember || isHost) && (
+        {isMember && !isHost && (
           <LeaveBtn onClick={handleLeave}>🚪 ออก Party</LeaveBtn>
         )}
       </Topbar>

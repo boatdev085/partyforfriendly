@@ -3,10 +3,17 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import styled, { keyframes } from "styled-components";
 import { theme } from "@/styles/theme";
 import { Users, Globe, Crown } from "lucide-react";
 import type { Party } from "@/types";
+
+function getDevUserIdFromCookie(): string {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie.match(/(^| )dev-user-id=([^;]+)/);
+  return match ? decodeURIComponent(match[2]) : "";
+}
 
 interface Props {
   party: Party;
@@ -236,6 +243,12 @@ type JoinState = "idle" | "joining" | "joined" | "requested" | "error";
 
 export default function PartyCard({ party }: Props) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const isDev = process.env.NODE_ENV === "development";
+  const devUserId = isDev ? getDevUserIdFromCookie() : "";
+  const currentUserId = devUserId || (session?.user?.id ?? "");
+  const isHost = !!currentUserId && party.host_id === currentUserId;
+
   const isFull = party.current_members >= party.max_members || party.status === "full";
   const effectiveStatus = isFull ? "full" : party.status;
   const hasPending = (party.pending_count ?? 0) > 0 && party.join_mode === "approve";
@@ -286,32 +299,34 @@ export default function PartyCard({ party }: Props) {
   }
 
   let actionBtn: React.ReactNode = null;
-  if (effectiveStatus === "full") {
-    actionBtn = (
-      <ActionBtn $variant="gray" disabled>
-        เต็มแล้ว
-      </ActionBtn>
-    );
-  } else if (effectiveStatus === "open" && party.join_mode === "auto") {
-    actionBtn = (
-      <ActionBtn
-        $variant="green"
-        onClick={handleJoin}
-        disabled={joinState === "joining" || joinState === "joined"}
-      >
-        {joinState === "joining" ? "กำลังเข้าร่วม…" : "⚡ เข้าร่วม"}
-      </ActionBtn>
-    );
-  } else if (effectiveStatus === "open" && party.join_mode === "approve") {
-    actionBtn = (
-      <ActionBtn
-        $variant="purple"
-        onClick={handleJoin}
-        disabled={joinState === "joining" || joinState === "requested"}
-      >
-        {joinState === "joining" ? "กำลังส่งคำขอ…" : "📨 ขอเข้าร่วม"}
-      </ActionBtn>
-    );
+  if (!isHost) {
+    if (effectiveStatus === "full") {
+      actionBtn = (
+        <ActionBtn $variant="gray" disabled>
+          เต็มแล้ว
+        </ActionBtn>
+      );
+    } else if (effectiveStatus === "open" && party.join_mode === "auto") {
+      actionBtn = (
+        <ActionBtn
+          $variant="green"
+          onClick={handleJoin}
+          disabled={joinState === "joining" || joinState === "joined"}
+        >
+          {joinState === "joining" ? "กำลังเข้าร่วม…" : "⚡ เข้าร่วม"}
+        </ActionBtn>
+      );
+    } else if (effectiveStatus === "open" && party.join_mode === "approve") {
+      actionBtn = (
+        <ActionBtn
+          $variant="purple"
+          onClick={handleJoin}
+          disabled={joinState === "joining" || joinState === "requested"}
+        >
+          {joinState === "joining" ? "กำลังส่งคำขอ…" : "📨 ขอเข้าร่วม"}
+        </ActionBtn>
+      );
+    }
   }
 
   const feedback =
