@@ -509,7 +509,7 @@ export default function PartyRoomPage() {
   const { data: session } = useSession();
   const isDev = process.env.NODE_ENV === "development";
   const devUserId = isDev ? getDevUserIdFromCookie() : "";
-  const currentUserId = devUserId || session?.user?.id ?? "";
+  const currentUserId = devUserId || (session?.user?.id ?? "");
   const currentUserName = session?.user?.name ?? "";
 
   const [party, setParty] = useState<PartyData | null>(null);
