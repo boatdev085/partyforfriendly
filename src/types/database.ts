@@ -92,6 +92,7 @@ export interface Database {
           max_members: number
           current_members: number
           status: 'open' | 'full' | 'closed' | 'in_progress'
+          join_mode: 'open' | 'request' | 'invite_only'
           required_rank: string | null
           language: 'th' | 'en' | 'both'
           discord_channel_id: string | null
@@ -109,6 +110,7 @@ export interface Database {
           max_members?: number
           current_members?: number
           status?: 'open' | 'full' | 'closed' | 'in_progress'
+          join_mode?: 'open' | 'request' | 'invite_only'
           required_rank?: string | null
           language?: 'th' | 'en' | 'both'
           discord_channel_id?: string | null
@@ -126,6 +128,7 @@ export interface Database {
           max_members?: number
           current_members?: number
           status?: 'open' | 'full' | 'closed' | 'in_progress'
+          join_mode?: 'open' | 'request' | 'invite_only'
           required_rank?: string | null
           language?: 'th' | 'en' | 'both'
           discord_channel_id?: string | null
@@ -141,7 +144,7 @@ export interface Database {
           party_id: string
           user_id: string
           role: 'host' | 'member'
-          status: 'approved' | 'pending' | 'rejected'
+          status: 'approved' | 'pending' | 'rejected' | 'left' | 'kicked'
           joined_at: string
         }
         Insert: {
@@ -149,7 +152,7 @@ export interface Database {
           party_id: string
           user_id: string
           role?: 'host' | 'member'
-          status?: 'approved' | 'pending' | 'rejected'
+          status?: 'approved' | 'pending' | 'rejected' | 'left' | 'kicked'
           joined_at?: string
         }
         Update: {
@@ -157,7 +160,7 @@ export interface Database {
           party_id?: string
           user_id?: string
           role?: 'host' | 'member'
-          status?: 'approved' | 'pending' | 'rejected'
+          status?: 'approved' | 'pending' | 'rejected' | 'left' | 'kicked'
           joined_at?: string
         }
       }
@@ -248,6 +251,7 @@ export interface Database {
       badges: {
         Row: {
           id: string
+          slug: string
           name: string
           description: string | null
           icon_url: string | null
@@ -257,6 +261,7 @@ export interface Database {
         }
         Insert: {
           id?: string
+          slug: string
           name: string
           description?: string | null
           icon_url?: string | null
@@ -266,6 +271,7 @@ export interface Database {
         }
         Update: {
           id?: string
+          slug?: string
           name?: string
           description?: string | null
           icon_url?: string | null
@@ -302,6 +308,9 @@ export interface Database {
           in_game_name: string | null
           rank: string | null
           role: string | null
+          play_style: string | null
+          notes: string | null
+          created_at: string
           updated_at: string
         }
         Insert: {
@@ -311,6 +320,9 @@ export interface Database {
           in_game_name?: string | null
           rank?: string | null
           role?: string | null
+          play_style?: string | null
+          notes?: string | null
+          created_at?: string
           updated_at?: string
         }
         Update: {
@@ -320,6 +332,9 @@ export interface Database {
           in_game_name?: string | null
           rank?: string | null
           role?: string | null
+          play_style?: string | null
+          notes?: string | null
+          created_at?: string
           updated_at?: string
         }
       }
@@ -337,13 +352,21 @@ export interface Database {
 }
 
 /** Convenience type aliases */
-export type UserRow       = Database['public']['Tables']['users']['Row']
-export type UserInsert    = Database['public']['Tables']['users']['Insert']
-export type UserUpdate    = Database['public']['Tables']['users']['Update']
-export type GameRow       = Database['public']['Tables']['games']['Row']
-export type PartyRow      = Database['public']['Tables']['parties']['Row']
-export type MembershipRow = Database['public']['Tables']['memberships']['Row']
-export type RatingRow     = Database['public']['Tables']['ratings']['Row']
-export type NotificationRow = Database['public']['Tables']['notifications']['Row']
-export type BadgeRow      = Database['public']['Tables']['badges']['Row']
-export type GameProfileRow = Database['public']['Tables']['game_profiles']['Row']
+export type UserRow           = Database['public']['Tables']['users']['Row']
+export type UserInsert        = Database['public']['Tables']['users']['Insert']
+export type UserUpdate        = Database['public']['Tables']['users']['Update']
+export type GameRow           = Database['public']['Tables']['games']['Row']
+export type PartyRow          = Database['public']['Tables']['parties']['Row']
+export type PartyInsert       = Database['public']['Tables']['parties']['Insert']
+export type PartyUpdate       = Database['public']['Tables']['parties']['Update']
+export type MembershipRow     = Database['public']['Tables']['memberships']['Row']
+export type MembershipInsert  = Database['public']['Tables']['memberships']['Insert']
+export type MembershipUpdate  = Database['public']['Tables']['memberships']['Update']
+export type RatingRow         = Database['public']['Tables']['ratings']['Row']
+export type NotificationRow   = Database['public']['Tables']['notifications']['Row']
+export type NotificationInsert = Database['public']['Tables']['notifications']['Insert']
+export type BadgeRow          = Database['public']['Tables']['badges']['Row']
+export type UserBadgeRow      = Database['public']['Tables']['user_badges']['Row']
+export type GameProfileRow    = Database['public']['Tables']['game_profiles']['Row']
+export type GameProfileInsert = Database['public']['Tables']['game_profiles']['Insert']
+export type GameProfileUpdate = Database['public']['Tables']['game_profiles']['Update']
