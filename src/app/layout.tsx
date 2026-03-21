@@ -4,7 +4,6 @@ import GlobalStyle from "@/styles/GlobalStyle";
 import LayoutShell from "@/components/layout/LayoutShell";
 import Footer from "@/components/layout/Footer";
 import SessionProviderWrapper from "@/components/auth/SessionProviderWrapper";
-import DevUserSwitcherLoader from "@/components/dev/DevUserSwitcherLoader";
 
 export const metadata: Metadata = {
   title: "PartyForFriendly",
@@ -26,7 +25,6 @@ export default function RootLayout({
               {children}
               <Footer />
             </LayoutShell>
-            <DevUserSwitcherLoader />
           </SessionProviderWrapper>
         </StyledComponentsRegistry>
       </body>
