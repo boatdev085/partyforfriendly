@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentUser } from '@/lib/auth';
+import { getDevUserId } from '@/lib/dev-auth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -75,27 +76,8 @@ export async function POST(request: NextRequest) {
     let hostId: string | null = (sessionUser as any)?.id ?? null;
 
     // ─── Dev fallback ────────────────────────────────────────────────────────
-    // When running locally without a real Discord session, find-or-create a
-    // persistent dev user so the FK constraint on parties.host_id is satisfied.
     if (!hostId && process.env.NODE_ENV === 'development') {
-      const { data: devUser, error: devErr } = await (admin
-        .from('users')
-        .upsert(
-          {
-            discord_id: 'dev-local-000',
-            username: 'devuser',
-            display_name: 'Dev User (local)',
-          } as never,
-          { onConflict: 'discord_id' }
-        )
-        .select()
-        .single() as any);
-
-      if (devErr) {
-        console.error('Dev user upsert error:', devErr);
-      } else {
-        hostId = (devUser as any)?.id ?? null;
-      }
+      hostId = await getDevUserId();
     }
     // ─────────────────────────────────────────────────────────────────────────
 
