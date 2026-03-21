@@ -42,9 +42,10 @@ export async function POST(
 ) {
   // 1. Auth check (with dev fallback)
   const isDev = process.env.NODE_ENV === "development"
+  const DEV_USER_ID = "6141de95-a2b7-4675-914e-92cdbd734296"
   const session = await getSession()
   const userId = isDev
-    ? (session?.user?.id ?? "dev-local-000")
+    ? (session?.user?.id ?? DEV_USER_ID)
     : session?.user?.id
   if (!userId) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })

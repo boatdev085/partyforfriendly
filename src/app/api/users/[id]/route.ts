@@ -78,8 +78,9 @@ export async function PATCH(
   // Auth check with dev fallback
   const isDev = process.env.NODE_ENV === "development"
   const session = await getSession()
+  const DEV_USER_ID = "6141de95-a2b7-4675-914e-92cdbd734296"
   const callerId = isDev
-    ? (session?.user?.id ?? "dev-local-000")
+    ? (session?.user?.id ?? DEV_USER_ID)
     : session?.user?.id
 
   if (!callerId) {
@@ -99,7 +100,7 @@ export async function PATCH(
   }
 
   const admin = createAdminClient()
-  const targetId = isDev ? "dev-local-000" : id
+  const targetId = isDev ? DEV_USER_ID : id
 
   const { data, error } = await admin
     .from("users")
