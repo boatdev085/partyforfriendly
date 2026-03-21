@@ -1,15 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  eslint: {
-    // ESLint errors in pre-existing files don't block the build
-    ignoreDuringBuilds: true,
-  },
   compiler: {
     styledComponents: true,
   },
   images: {
-    domains: ["cdn.discordapp.com", "avatars.githubusercontent.com"],
+    remotePatterns: [
+      { hostname: "cdn.discordapp.com" },
+      { hostname: "avatars.githubusercontent.com" },
+    ],
   },
   async headers() {
     return [
