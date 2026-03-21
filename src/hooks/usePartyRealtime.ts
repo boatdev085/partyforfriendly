@@ -105,5 +105,14 @@ export function usePartyRealtime(
     [partyId, supabase],
   )
 
-  return { members, messages, sendMessage }
+  // ── refreshMembers: re-fetch members from API (call after join/kick) ─────
+  const refreshMembers = useCallback(async (): Promise<void> => {
+    const res = await fetch(`/api/parties/${partyId}/members`)
+    if (res.ok) {
+      const { members: fresh } = await res.json() as { members: MemberWithUser[] }
+      setMembers(fresh ?? [])
+    }
+  }, [partyId])
+
+  return { members, messages, sendMessage, refreshMembers }
 }

@@ -8,7 +8,8 @@
  * Host cannot kick themselves.
  */
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/auth"
+import { getSession } from "@/lib/auth"
+import { getDevUserId } from "@/lib/dev-auth"
 import { getPartyById } from "@/lib/parties"
 import { kickMember } from "@/lib/party-members"
 import { createClient } from "@/lib/supabase/server"
@@ -19,13 +20,16 @@ export async function POST(
   req: NextRequest,
   { params }: RouteContext,
 ) {
-  // 1. Auth
-  let user: Awaited<ReturnType<typeof requireAuth>>
-  try {
-    user = await requireAuth()
-  } catch {
+  // 1. Auth (with dev fallback)
+  const isDev = process.env.NODE_ENV === "development"
+  const session = await getSession()
+  const callerId = isDev
+    ? (session?.user?.id ?? await getDevUserId())
+    : session?.user?.id
+  if (!callerId) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
+  const user = { id: callerId }
 
   const { id: partyId } = await params
 
