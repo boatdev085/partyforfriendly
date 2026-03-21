@@ -26,6 +26,7 @@ export interface Party {
   pending_count?: number;
   host_name?: string;
   game_name?: string;
+  host_rating?: number;
 }
 
 export interface Membership {

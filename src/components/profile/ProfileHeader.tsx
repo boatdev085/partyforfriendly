@@ -15,6 +15,7 @@ interface Props {
   bio: string;
   isSelf?: boolean;
   onEdit?: () => void;
+  avatarUrl?: string | null;
 }
 
 const BADGES: Badge[] = [
@@ -104,7 +105,7 @@ const BadgeChip = styled.span<{ $color: string; $bg: string }>`
   background: ${({ $bg }) => $bg};
 `;
 
-export default function ProfileHeader({ username, bio, isSelf, onEdit }: Props) {
+export default function ProfileHeader({ username, bio, isSelf, onEdit, avatarUrl }: Props) {
   const initials = username.slice(0, 2).toUpperCase();
 
   return (
@@ -112,7 +113,17 @@ export default function ProfileHeader({ username, bio, isSelf, onEdit }: Props) 
       {isSelf && (
         <EditBtn onClick={onEdit}>✏️ แก้ไข</EditBtn>
       )}
-      <Avatar>{initials}</Avatar>
+      <Avatar>
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={username}
+            style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+          />
+        ) : (
+          initials
+        )}
+      </Avatar>
       <DisplayName>{username}</DisplayName>
       <Bio>{bio}</Bio>
       <BadgeRow>

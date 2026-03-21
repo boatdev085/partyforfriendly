@@ -15,18 +15,20 @@
  *   500 { error: 'internal_error' }
  */
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/auth"
+import { getSession } from "@/lib/auth"
 import { leaveParty } from "@/lib/party-members"
 
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  // 1. Auth check
-  let user: Awaited<ReturnType<typeof requireAuth>>
-  try {
-    user = await requireAuth()
-  } catch {
+  // 1. Auth check (with dev fallback)
+  const isDev = process.env.NODE_ENV === "development"
+  const session = await getSession()
+  const userId = isDev
+    ? (session?.user?.id ?? "dev-local-000")
+    : session?.user?.id
+  if (!userId) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
 
@@ -37,7 +39,7 @@ export async function POST(
   }
 
   // 3. Call the RPC via the lib helper
-  const result = await leaveParty(partyId, user.id)
+  const result = await leaveParty(partyId, userId)
 
   if (!result) {
     return NextResponse.json({ error: "internal_error" }, { status: 500 })

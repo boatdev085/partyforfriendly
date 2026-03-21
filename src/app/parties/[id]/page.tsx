@@ -34,6 +34,7 @@ interface PartyData {
   current_members: number;
   game_id: string | null;
   game?: GameInfo | null;
+  discord_voice_link?: string | null;
   host: {
     id: string;
     username: string;
@@ -150,6 +151,29 @@ const LeaveBtn = styled.button`
 
   &:hover {
     background: ${theme.colors.danger};
+    color: #fff;
+  }
+
+  @media (max-width: 480px) {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+`;
+
+const RateBtn = styled.button`
+  padding: 8px 14px;
+  border-radius: ${theme.radii.md};
+  background: transparent;
+  border: 1px solid ${theme.colors.accent};
+  color: ${theme.colors.accent};
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    background: ${theme.colors.accent};
     color: #fff;
   }
 
@@ -358,11 +382,11 @@ function PartyRoomContent({
       id: m.user_id,
       username: m.user?.display_name ?? m.user?.username ?? `User${m.user_id.slice(0, 6)}`,
       isLeader: m.role === "host" || m.user_id === party.host_id,
-      isOnline: true,
-      rating: 0,
+      isOnline: party.status === "open" || party.status === "in_progress",
+      rating: m.average_rating ?? 0,
       isSelf: m.user_id === currentUserId,
     }));
-  }, [members, party.host_id, currentUserId]);
+  }, [members, party.host_id, currentUserId, party.status]);
 
   // Send message via API (Realtime INSERT will pick it up automatically)
   const handleSendMessage = useCallback(
@@ -426,6 +450,11 @@ function PartyRoomContent({
         {!isMember && !isHost && party.status === "open" && (
           <JoinBtn onClick={handleJoin}>🎮 เข้าร่วม</JoinBtn>
         )}
+        {isMember && (
+          <RateBtn onClick={() => router.push(`/reviews?partyId=${party.id}`)}>
+            ⭐ ให้คะแนน
+          </RateBtn>
+        )}
         <LeaveBtn onClick={handleLeave}>🚪 ออก Party</LeaveBtn>
       </Topbar>
 
@@ -435,6 +464,7 @@ function PartyRoomContent({
             messages={displayMessages}
             onSendMessage={handleSendMessage}
             currentUserId={currentUserId}
+            discordLink={party.discord_voice_link ?? undefined}
           />
         </ChatCol>
 
@@ -451,7 +481,7 @@ function PartyRoomContent({
 
           <SideSection>
             <SectionTitle>สมาชิก ({displayMembers.length}/{party.max_members})</SectionTitle>
-            <MembersList members={displayMembers} maxMembers={party.max_members} />
+            <MembersList members={displayMembers} maxMembers={party.max_members} partyStatus={party.status} />
           </SideSection>
 
           <AdDiv>📢 พื้นที่โฆษณา</AdDiv>

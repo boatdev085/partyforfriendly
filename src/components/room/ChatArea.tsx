@@ -18,6 +18,7 @@ interface Props {
   messages: ChatMessage[];
   onSendMessage: (text: string) => Promise<void>;
   currentUserId: string;
+  discordLink?: string;
 }
 
 const Wrapper = styled.div`
@@ -190,7 +191,7 @@ function getInitials(username: string) {
   return username.slice(0, 2).toUpperCase();
 }
 
-export default function ChatArea({ messages, onSendMessage, currentUserId }: Props) {
+export default function ChatArea({ messages, onSendMessage, currentUserId, discordLink }: Props) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -215,7 +216,7 @@ export default function ChatArea({ messages, onSendMessage, currentUserId }: Pro
   return (
     <Wrapper>
       <Top>
-        <VoiceWidget activeCount={2} />
+        <VoiceWidget activeCount={2} discordLink={discordLink} />
       </Top>
 
       <MessagesArea>

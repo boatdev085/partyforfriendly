@@ -40,12 +40,15 @@ export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  // 1. Auth check
+  // 1. Auth check (with dev fallback)
+  const isDev = process.env.NODE_ENV === "development"
   const session = await getSession()
-  if (!session?.user?.id) {
+  const userId = isDev
+    ? (session?.user?.id ?? "dev-local-000")
+    : session?.user?.id
+  if (!userId) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
-  const userId = session.user.id
 
   // 2. Resolve dynamic segment (Next.js 15 params are async)
   const { id: partyId } = await params

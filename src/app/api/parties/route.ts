@@ -113,6 +113,9 @@ export async function POST(request: NextRequest) {
       description,
       join_mode,
       max_members,
+      tags,
+      discord_voice_link,
+      scheduled_at,
     } = body;
 
     // Validation
@@ -144,6 +147,9 @@ export async function POST(request: NextRequest) {
         max_members: Number(max_members),
         status: 'open',
         host_id: hostId,
+        tags: tags ?? [],
+        discord_voice_link: discord_voice_link ?? null,
+        scheduled_at: scheduled_at ?? null,
       } as never)
       .select()
       .single() as any);

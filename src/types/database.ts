@@ -98,6 +98,9 @@ export interface Database {
           discord_channel_id: string | null
           discord_voice_channel_id: string | null
           is_private: boolean
+          tags: string[] | null
+          discord_voice_link: string | null
+          scheduled_at: string | null
           created_at: string
           updated_at: string
         }
@@ -116,6 +119,9 @@ export interface Database {
           discord_channel_id?: string | null
           discord_voice_channel_id?: string | null
           is_private?: boolean
+          tags?: string[] | null
+          discord_voice_link?: string | null
+          scheduled_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -134,6 +140,9 @@ export interface Database {
           discord_channel_id?: string | null
           discord_voice_channel_id?: string | null
           is_private?: boolean
+          tags?: string[] | null
+          discord_voice_link?: string | null
+          scheduled_at?: string | null
           created_at?: string
           updated_at?: string
         }

@@ -13,6 +13,7 @@ export interface Member {
 interface Props {
   members: Member[];
   maxMembers: number;
+  partyStatus?: string;
 }
 
 const avatarColors = [
@@ -117,7 +118,9 @@ function getInitials(username: string) {
   return username.slice(0, 2).toUpperCase();
 }
 
-export default function MembersList({ members, maxMembers }: Props) {
+export default function MembersList({ members, maxMembers, partyStatus }: Props) {
+  // A member is "online" only when the party is actively running
+  const isOnline = partyStatus === "open" || partyStatus === "in_progress"
   const emptySlots = maxMembers - members.length;
 
   return (
@@ -130,7 +133,7 @@ export default function MembersList({ members, maxMembers }: Props) {
           <Info>
             <NameRow>
               <Username>{member.username}</Username>
-              {member.isOnline && <OnlineDot />}
+              {isOnline && <OnlineDot />}
               {member.isLeader && <LeaderIcon>👑</LeaderIcon>}
               {member.isSelf && <SelfTag>YOU</SelfTag>}
             </NameRow>

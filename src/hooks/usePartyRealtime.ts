@@ -20,6 +20,7 @@ export interface MemberWithUser extends MembershipRow {
     display_name: string | null
     avatar_url: string | null
   } | null
+  average_rating?: number | null
 }
 
 export function usePartyRealtime(

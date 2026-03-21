@@ -112,6 +112,7 @@ interface PartyData {
   status: string;
   join_mode: "open" | "request" | "invite_only";
   discord_channel_id: string | null;
+  discord_voice_link: string | null;
   member_count: number;
 }
 
@@ -286,7 +287,7 @@ export default function LeaderPanelPage() {
       body: JSON.stringify({
         join_mode: settings.joinMode === "auto" ? "open" : "request",
         max_members: settings.maxMembers,
-        discord_channel_id: settings.discord || null,
+        discord_voice_link: settings.discord || null,
       }),
     });
     await fetchAll();
@@ -349,7 +350,7 @@ export default function LeaderPanelPage() {
             key={party?.id ?? "loading"}
             initialJoinMode={joinModeInitial}
             initialMaxMembers={maxMembers}
-            initialDiscord={party?.discord_channel_id ?? ""}
+            initialDiscord={party?.discord_voice_link ?? ""}
             onSave={handleSave}
           />
 

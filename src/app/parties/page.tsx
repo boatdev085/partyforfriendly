@@ -170,7 +170,7 @@ interface Party {
   description: string;
   game_id: string;
   games?: { name: string; icon?: string };
-  party_members?: Array<{ count: number }>;
+  memberships?: Array<{ count: number }>;
   max_members: number;
   join_mode: string;
   status: string;
@@ -263,7 +263,7 @@ export default function PartiesPage() {
                 </div>
                 <div className="meta">
                   <div className="members">
-                    👥 {party.party_members?.[0]?.count || 0}/{party.max_members}
+                    👥 {party.memberships?.[0]?.count ?? 0}/{party.max_members}
                   </div>
                   <div>
                     {party.join_mode === 'open' && '🔓 เปิด'}

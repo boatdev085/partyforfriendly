@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
+import { createClient } from "@/lib/supabase/client";
 import styled from "styled-components";
 import { theme } from "@/styles/theme";
 import toast from "react-hot-toast";
@@ -129,6 +130,7 @@ export default function NotificationsPage() {
   const { data: session } = useSession();
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
 
   // Fetch notifications on mount
   const fetchNotifs = useCallback(async () => {
@@ -149,6 +151,36 @@ export default function NotificationsPage() {
   useEffect(() => {
     void fetchNotifs();
   }, [fetchNotifs]);
+
+  // Realtime subscription — prepend new notifications without page reload
+  useEffect(() => {
+    const userId = (session?.user as { id?: string } | undefined)?.id;
+    if (!userId) return;
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`notifications:${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const newNotif = rowToNotif(payload.new as NotificationRow);
+          setNotifs((prev) => [newNotif, ...prev]);
+        },
+      )
+      .subscribe();
+
+    channelRef.current = channel;
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [session]);
 
   // Mark single notification as read
   const markRead = useCallback(async (id: string) => {
