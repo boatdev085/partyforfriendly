@@ -455,7 +455,7 @@ function PartyRoomContent({
             ⭐ ให้คะแนน
           </RateBtn>
         )}
-        {(isMember || isHost) && (
+        {!isHost && isMember && (
           <LeaveBtn onClick={handleLeave}>🚪 ออก Party</LeaveBtn>
         )}
       </Topbar>
@@ -507,10 +507,13 @@ export default function PartyRoomPage() {
   const params = useParams();
   const partyId = params.id as string;
   const { data: session } = useSession();
-  const isDev = process.env.NODE_ENV === "development";
-  const devUserId = isDev ? getDevUserIdFromCookie() : "";
-  const currentUserId = devUserId || (session?.user?.id ?? "");
   const currentUserName = session?.user?.name ?? "";
+
+  const [currentUserId, setCurrentUserId] = useState("");
+  useEffect(() => {
+    const devId = process.env.NODE_ENV === "development" ? getDevUserIdFromCookie() : "";
+    setCurrentUserId(devId || session?.user?.id || "");
+  }, [session]);
 
   const [party, setParty] = useState<PartyData | null>(null);
   const [loading, setLoading] = useState(true);
