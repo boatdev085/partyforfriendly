@@ -100,6 +100,7 @@ export default function DevUserSwitcher() {
   const selectUser = (id: string) => {
     setCookie('dev-user-id', id)
     setActiveId(id)
+    window.location.reload()
   }
 
   const activeUser = DEV_USERS.find((u) => u.id === activeId)
