@@ -14,6 +14,7 @@ import { getAverageRating } from "@/lib/reviews"
 import { createClient } from "@/lib/supabase/server"
 import { getSession } from "@/lib/auth"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getDevUserId } from "@/lib/dev-auth"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -78,9 +79,8 @@ export async function PATCH(
   // Auth check with dev fallback
   const isDev = process.env.NODE_ENV === "development"
   const session = await getSession()
-  const DEV_USER_ID = "6141de95-a2b7-4675-914e-92cdbd734296"
   const callerId = isDev
-    ? (session?.user?.id ?? DEV_USER_ID)
+    ? (session?.user?.id ?? await getDevUserId())
     : session?.user?.id
 
   if (!callerId) {
@@ -100,7 +100,7 @@ export async function PATCH(
   }
 
   const admin = createAdminClient()
-  const targetId = isDev ? DEV_USER_ID : id
+  const targetId = isDev ? callerId : id
 
   const { data, error } = await admin
     .from("users")

@@ -23,6 +23,7 @@ import { getSession } from "@/lib/auth"
 import { getPartyById } from "@/lib/parties"
 import { createJoinRequest, getUserRequest } from "@/lib/join-requests"
 import { createClient } from "@/lib/supabase/server"
+import { getDevUserId } from "@/lib/dev-auth"
 
 // ---------------------------------------------------------------------------
 // RPC result shape returned by join_party_safe
@@ -42,10 +43,9 @@ export async function POST(
 ) {
   // 1. Auth check (with dev fallback)
   const isDev = process.env.NODE_ENV === "development"
-  const DEV_USER_ID = "6141de95-a2b7-4675-914e-92cdbd734296"
   const session = await getSession()
   const userId = isDev
-    ? (session?.user?.id ?? DEV_USER_ID)
+    ? (session?.user?.id ?? await getDevUserId())
     : session?.user?.id
   if (!userId) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
