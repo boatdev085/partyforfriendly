@@ -358,8 +358,10 @@ export default function ProfilePage() {
   useEffect(() => { fetchProfile(); }, [fetchProfile]);
 
   // isSelf: compare profileId with the logged-in user's Supabase UUID
+  // In dev mode (no real Discord session), treat every profile page as own profile
+  const isDev = process.env.NODE_ENV === "development";
   const sessionUserId = (session?.user as { id?: string })?.id;
-  const isSelf = !!sessionUserId && sessionUserId === profileId;
+  const isSelf = isDev || (!!sessionUserId && sessionUserId === profileId);
 
   const displayName = user?.display_name ?? user?.username ?? "Unknown Player";
 
